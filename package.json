@@ -24,6 +24,13 @@
     "build:all": "node scripts/build-all.js"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.5.2",
+    "@types/pg": "^8.20.0",
+    "@types/speakeasy": "^2.0.10",
     "concurrently": "^8.2.2"
   },
   "dependencies": {

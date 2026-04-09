@@ -8,7 +8,7 @@ COPY package*.json ./
 RUN npm ci
 
 # 🔥 FIX: give permission to tsc
-RUN chmod +x node_modules/.bin/tsc
+RUN npm install -g typescript
 
 # Copy source
 COPY . .

@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ES2020"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "types": ["vite/client"],
+
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+
+    "jsx": "react-jsx",
+
+    /* ✅ MATCH VITE ALIASES */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@modules/*": ["src/modules/*"],
+      "@components/*": ["src/components/*"],
+      "@store/*": ["src/store/*"],
+      "@hooks/*": ["src/hooks/*"],
+      "@lib/*": ["src/lib/*"],
+      "@types/*": ["src/types/*"]
+    },
+
+    /* ✅ PRODUCTION SAFE */
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["src"]
+}

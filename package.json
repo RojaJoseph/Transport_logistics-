@@ -1,0 +1,34 @@
+{
+  "name": "transport-logistics-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TransportOS — Enterprise Logistics Platform (localhost)",
+  "scripts": {
+    "dev": "concurrently --kill-others-on-fail --raw --names \"GW,ERP,TRN,TRK,IDN,FIN,ORD,NTF,INT,ANA,AI,FE\" --prefix-colors \"cyan,magenta,blue,green,red,yellow,white,cyan.dim,magenta.dim,blue.dim,green.dim,white.dim\" \"npm run dev:gateway\" \"npm run dev:erp\" \"npm run dev:transport\" \"npm run dev:tracking\" \"npm run dev:identity\" \"npm run dev:finance\" \"npm run dev:orders\" \"npm run dev:notify\" \"npm run dev:integrate\" \"npm run dev:analytics\" \"npm run dev:ai\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend                       && npm run dev",
+    "dev:gateway": "cd services/api-gateway           && npm run dev",
+    "dev:erp": "cd services/erp-service           && npm run dev",
+    "dev:transport": "cd services/transport-service     && npm run dev",
+    "dev:tracking": "cd services/tracking-service      && npm run dev",
+    "dev:identity": "cd services/identity-service      && npm run dev",
+    "dev:finance": "cd services/finance-service       && npm run dev",
+    "dev:orders": "cd services/order-service         && npm run dev",
+    "dev:notify": "cd services/notification-service  && npm run dev",
+    "dev:integrate": "cd services/integration-service   && npm run dev",
+    "dev:analytics": "cd services/analytics-service     && python -m uvicorn app.main:app --host 127.0.0.1 --port 4010 --reload",
+    "dev:ai": "cd services/ai-service            && python -m uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload",
+    "install:all": "node scripts/install-all.js",
+    "db:init": "node scripts/db-init.js",
+    "db:seed": "node scripts/db-seed.js",
+    "check:deps": "node scripts/check-deps.js",
+    "build:all": "node scripts/build-all.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.1",
+    "pg": "^8.20.0",
+    "xyz": "^5.0.0"
+  }
+}

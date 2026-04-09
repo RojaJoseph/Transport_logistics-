@@ -1,0 +1,615 @@
+ Image tranport_logistics-finance-service Building 
+ Image tranport_logistics-analytics-service Building 
+ Image tranport_logistics-order-service Building 
+ Image tranport_logistics-erp-service Building 
+ Image tranport_logistics-identity-service Building 
+ Image tranport_logistics-tracking-service Building 
+ Image tranport_logistics-notification-service Building 
+ Image tranport_logistics-frontend Building 
+ Image tranport_logistics-transport-service Building 
+ Image tranport_logistics-integration-service Building 
+ Image tranport_logistics-api-gateway Building 
+ Image tranport_logistics-ai-service Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 6.29kB 0.0s done
+#1 DONE 0.0s
+
+#2 [analytics-service internal] load build definition from Dockerfile
+#2 transferring dockerfile: 259B 0.0s done
+#2 DONE 0.3s
+
+#3 [ai-service internal] load build definition from Dockerfile
+#3 transferring dockerfile: 259B 0.0s done
+#3 DONE 0.3s
+
+#4 [notification-service internal] load build definition from Dockerfile
+#4 transferring dockerfile: 171B 0.0s done
+#4 ...
+
+#5 [api-gateway internal] load build definition from Dockerfile
+#5 transferring dockerfile: 170B 0.0s done
+#5 DONE 0.3s
+
+#6 [identity-service internal] load build definition from Dockerfile
+#6 transferring dockerfile: 171B 0.0s done
+#6 DONE 0.4s
+
+#7 [finance-service internal] load build definition from Dockerfile
+#7 transferring dockerfile: 171B done
+#7 DONE 0.4s
+
+#8 [order-service internal] load build definition from Dockerfile
+#8 transferring dockerfile: 171B done
+#8 DONE 0.4s
+
+#4 [notification-service internal] load build definition from Dockerfile
+#4 DONE 0.5s
+
+#9 [order-service internal] load metadata for docker.io/library/node:20-alpine
+#9 ...
+
+#10 [tracking-service internal] load build definition from Dockerfile
+#10 transferring dockerfile: 171B done
+#10 DONE 0.5s
+
+#11 [erp-service internal] load build definition from Dockerfile
+#11 transferring dockerfile: 171B done
+#11 DONE 0.6s
+
+#12 [frontend internal] load build definition from Dockerfile
+#12 transferring dockerfile: 313B done
+#12 DONE 0.6s
+
+#13 [integration-service internal] load build definition from Dockerfile
+#13 transferring dockerfile: 171B done
+#13 DONE 0.6s
+
+#14 [auth] library/node:pull token for registry-1.docker.io
+#14 DONE 0.0s
+
+#15 [auth] library/python:pull token for registry-1.docker.io
+#15 DONE 0.0s
+
+#9 [erp-service internal] load metadata for docker.io/library/node:20-alpine
+#9 ...
+
+#16 [transport-service internal] load build definition from Dockerfile
+#16 transferring dockerfile: 171B 0.0s done
+#16 DONE 0.7s
+
+#9 [transport-service internal] load metadata for docker.io/library/node:20-alpine
+#9 ...
+
+#17 [frontend internal] load metadata for docker.io/library/nginx:alpine
+#17 DONE 0.2s
+
+#18 [ai-service internal] load metadata for docker.io/library/python:3.11-slim
+#18 DONE 4.2s
+
+#9 [identity-service internal] load metadata for docker.io/library/node:20-alpine
+#9 DONE 4.2s
+
+#19 [integration-service internal] load .dockerignore
+#19 transferring context: 2B done
+#19 ...
+
+#20 [analytics-service internal] load .dockerignore
+#20 transferring context: 2B done
+#20 DONE 0.1s
+
+#21 [ai-service internal] load .dockerignore
+#21 transferring context: 2B done
+#21 DONE 0.2s
+
+#22 [api-gateway internal] load .dockerignore
+#22 transferring context: 2B done
+#22 DONE 0.2s
+
+#23 [transport-service internal] load .dockerignore
+#23 transferring context: 2B done
+#23 DONE 0.3s
+
+#24 [ai-service 1/5] FROM docker.io/library/python:3.11-slim@sha256:b1b81d67b8df73bf6067191790c233ef9e598b863fc1ccf447956138ca466d99
+#24 resolve docker.io/library/python:3.11-slim@sha256:b1b81d67b8df73bf6067191790c233ef9e598b863fc1ccf447956138ca466d99
+#24 resolve docker.io/library/python:3.11-slim@sha256:b1b81d67b8df73bf6067191790c233ef9e598b863fc1ccf447956138ca466d99 0.1s done
+#24 DONE 0.1s
+
+#25 [api-gateway internal] load build context
+#25 DONE 0.0s
+
+#26 [notification-service internal] load .dockerignore
+#26 transferring context: 2B done
+#26 DONE 0.3s
+
+#19 [integration-service internal] load .dockerignore
+#19 DONE 0.3s
+
+#27 [erp-service internal] load .dockerignore
+#27 transferring context: 2B done
+#27 DONE 0.4s
+
+#28 [api-gateway 1/6] FROM docker.io/library/node:20-alpine@sha256:f598378b5240225e6beab68fa9f356db1fb8efe55173e6d4d8153113bb8f333c
+#28 resolve docker.io/library/node:20-alpine@sha256:f598378b5240225e6beab68fa9f356db1fb8efe55173e6d4d8153113bb8f333c 0.1s done
+#28 DONE 0.1s
+
+#29 [order-service internal] load .dockerignore
+#29 transferring context: 2B done
+#29 DONE 0.4s
+
+#30 [frontend internal] load .dockerignore
+#30 transferring context: 2B done
+#30 DONE 0.4s
+
+#31 [tracking-service internal] load .dockerignore
+#31 transferring context: 2B done
+#31 DONE 0.5s
+
+#32 [finance-service internal] load .dockerignore
+#32 transferring context: 2B done
+#32 DONE 0.5s
+
+#33 [identity-service internal] load .dockerignore
+#33 transferring context: 2B done
+#33 DONE 0.5s
+
+#34 [analytics-service internal] load build context
+#34 transferring context: 121B done
+#34 DONE 0.4s
+
+#28 [identity-service 1/6] FROM docker.io/library/node:20-alpine@sha256:f598378b5240225e6beab68fa9f356db1fb8efe55173e6d4d8153113bb8f333c
+#28 resolve docker.io/library/node:20-alpine@sha256:f598378b5240225e6beab68fa9f356db1fb8efe55173e6d4d8153113bb8f333c 0.1s done
+#28 DONE 0.1s
+
+#35 [ai-service internal] load build context
+#35 transferring context: 467B done
+#35 DONE 0.4s
+
+#36 [order-service internal] load build context
+#36 DONE 0.0s
+
+#37 [analytics-service 3/5] COPY requirements.txt .
+#37 CACHED
+
+#38 [analytics-service 4/5] RUN pip install --no-cache-dir -r requirements.txt
+#38 CACHED
+
+#39 [analytics-service 5/5] COPY . .
+#39 CACHED
+
+#40 [tracking-service internal] load build context
+#40 DONE 0.0s
+
+#41 [notification-service internal] load build context
+#41 DONE 0.0s
+
+#42 [transport-service internal] load build context
+#42 DONE 0.0s
+
+#43 [ai-service 3/5] COPY requirements.txt .
+#43 CACHED
+
+#44 [ai-service 4/5] RUN pip install --no-cache-dir -r requirements.txt
+#44 CACHED
+
+#45 [ai-service 2/5] WORKDIR /app
+#45 CACHED
+
+#46 [ai-service 5/5] COPY . .
+#46 CACHED
+
+#47 [identity-service internal] load build context
+#47 DONE 0.0s
+
+#48 [integration-service internal] load build context
+#48 DONE 0.0s
+
+#49 [finance-service internal] load build context
+#49 DONE 0.0s
+
+#50 [erp-service internal] load build context
+#50 DONE 0.0s
+
+#51 [frontend internal] load build context
+#51 ...
+
+#52 [frontend stage-1 1/3] FROM docker.io/library/nginx:alpine@sha256:1d13701a5f9f3fb01aaa88cef2344d65b6b5bf6b7d9fa4cf0dca557a8d7702ba
+#52 resolve docker.io/library/nginx:alpine@sha256:1d13701a5f9f3fb01aaa88cef2344d65b6b5bf6b7d9fa4cf0dca557a8d7702ba 0.2s done
+#52 DONE 0.2s
+
+#25 [api-gateway internal] load build context
+#25 transferring context: 9.34kB 0.1s done
+#25 DONE 0.3s
+
+#51 [frontend internal] load build context
+#51 transferring context: 38.58kB 0.2s done
+#51 ...
+
+#41 [notification-service internal] load build context
+#41 transferring context: 9.17kB 0.1s done
+#41 DONE 0.4s
+
+#51 [frontend internal] load build context
+#51 DONE 0.6s
+
+#48 [integration-service internal] load build context
+#48 transferring context: 45.92kB 0.3s done
+#48 DONE 0.6s
+
+#47 [identity-service internal] load build context
+#47 transferring context: 48.08kB 0.2s done
+#47 DONE 0.7s
+
+#53 [ai-service] exporting to image
+#53 exporting layers 0.0s done
+#53 exporting manifest sha256:598ad1def0450c0de8db2c7e86f477f3c85ae18618fe29746fd75752b5a5b384 0.0s done
+#53 exporting config sha256:2bb73bdbedc059c89bb36246447f072498f7c596038852d0c917104fe2ebaae9 0.1s done
+#53 exporting attestation manifest sha256:5ceb184f38e3524a7d08e004cf4ab48f6b2b0ea82abfe670b8d067af0d2fa29a
+#53 ...
+
+#36 [order-service internal] load build context
+#36 transferring context: 45.92kB 0.2s done
+#36 DONE 0.7s
+
+#49 [finance-service internal] load build context
+#49 transferring context: 45.92kB 0.2s done
+#49 DONE 0.8s
+
+#50 [erp-service internal] load build context
+#50 transferring context: 46.15kB 0.2s done
+#50 DONE 0.8s
+
+#40 [tracking-service internal] load build context
+#40 transferring context: 46.47kB 0.3s done
+#40 DONE 0.8s
+
+#42 [transport-service internal] load build context
+#42 transferring context: 45.92kB 0.2s done
+#42 DONE 0.9s
+
+#54 [analytics-service] exporting to image
+#54 exporting layers 0.1s done
+#54 exporting manifest sha256:53a1e9ed6b26600cfb736f268f299b49796d139640f6b32650b7dd6ca171fef2 0.1s done
+#54 exporting config sha256:91c02409452c3504b1f8a600f325adfeae6e6450fbb6d0f76dab9ee188689989 0.1s done
+#54 exporting attestation manifest sha256:e914282220c364e7f78dab5c410d53ebf9978d84ca64c78bbd36bc077b47eddd
+#54 ...
+
+#55 [api-gateway 3/6] COPY package*.json ./
+#55 CACHED
+
+#56 [api-gateway 5/6] COPY . .
+#56 CACHED
+
+#57 [api-gateway 4/6] RUN npm install
+#57 CACHED
+
+#58 [api-gateway 2/6] WORKDIR /app
+#58 CACHED
+
+#54 [analytics-service] exporting to image
+#54 exporting attestation manifest sha256:e914282220c364e7f78dab5c410d53ebf9978d84ca64c78bbd36bc077b47eddd 0.4s done
+#54 exporting manifest list sha256:57b4bf4e1a2a96baa9f723ff0235e7a6588f2c356746f7322fc9c18f4c9094c2
+#54 ...
+
+#59 [api-gateway 6/6] RUN npm run build
+#59 CACHED
+
+#54 [analytics-service] exporting to image
+#54 exporting manifest list sha256:57b4bf4e1a2a96baa9f723ff0235e7a6588f2c356746f7322fc9c18f4c9094c2 0.2s done
+#54 naming to docker.io/library/tranport_logistics-analytics-service:latest 0.0s done
+#54 unpacking to docker.io/library/tranport_logistics-analytics-service:latest
+#54 unpacking to docker.io/library/tranport_logistics-analytics-service:latest 0.0s done
+#54 DONE 1.2s
+
+#53 [ai-service] exporting to image
+#53 exporting attestation manifest sha256:5ceb184f38e3524a7d08e004cf4ab48f6b2b0ea82abfe670b8d067af0d2fa29a 0.4s done
+#53 exporting manifest list sha256:38c65fc39d73a7aa31a4832791ae6ac9f8ebec2c2e483757f0ff66dfa83d89cf 0.1s done
+#53 naming to docker.io/library/tranport_logistics-ai-service:latest 0.0s done
+#53 unpacking to docker.io/library/tranport_logistics-ai-service:latest 0.0s done
+#53 DONE 1.2s
+
+#60 [api-gateway] exporting to image
+#60 exporting layers 0.0s done
+#60 exporting manifest sha256:efd40fba0407a2a5d8034f41266821bd3c3466a70811e0d27cc3c04bf3b5d684 0.0s done
+#60 exporting config sha256:49b374198bd3caddaa6d72ccc2b69c2e6ac482b4c5b2a32325f30947f5658a64 0.0s done
+#60 exporting attestation manifest sha256:8d747515c1ed89217409c759e813aa62891c5ecf40d739ec2940f32d17810617
+#60 ...
+
+#61 [order-service 5/6] COPY . .
+#61 CACHED
+
+#62 [order-service 4/6] RUN npm install
+#62 CACHED
+
+#63 [order-service 3/6] COPY package*.json ./
+#63 CACHED
+
+#64 [order-service 6/6] RUN npm run build
+#64 CACHED
+
+#65 [notification-service 5/6] COPY . .
+#65 CACHED
+
+#66 [notification-service 4/6] RUN npm install
+#66 CACHED
+
+#67 [notification-service 3/6] COPY package*.json ./
+#67 CACHED
+
+#68 [identity-service 5/6] COPY . .
+#68 CACHED
+
+#69 [identity-service 3/6] COPY package*.json ./
+#69 CACHED
+
+#70 [identity-service 4/6] RUN npm install
+#70 CACHED
+
+#71 [notification-service 6/6] RUN npm run build
+#71 CACHED
+
+#72 [integration-service 5/6] COPY . .
+#72 CACHED
+
+#73 [integration-service 3/6] COPY package*.json ./
+#73 CACHED
+
+#74 [integration-service 4/6] RUN npm install
+#74 CACHED
+
+#75 [identity-service 6/6] RUN npm run build
+#75 CACHED
+
+#76 [erp-service 4/6] RUN npm install
+#76 CACHED
+
+#77 [erp-service 5/6] COPY . .
+#77 CACHED
+
+#78 [erp-service 3/6] COPY package*.json ./
+#78 CACHED
+
+#58 [order-service 2/6] WORKDIR /app
+#58 CACHED
+
+#79 [finance-service 4/6] RUN npm install
+#79 CACHED
+
+#80 [finance-service 5/6] COPY . .
+#80 CACHED
+
+#81 [finance-service 3/6] COPY package*.json ./
+#81 CACHED
+
+#82 [integration-service 6/6] RUN npm run build
+#82 CACHED
+
+#83 [erp-service 6/6] RUN npm run build
+#83 CACHED
+
+#84 [finance-service 6/6] RUN npm run build
+#84 CACHED
+
+#85 [tracking-service 4/6] RUN npm install
+#85 CACHED
+
+#86 [tracking-service 3/6] COPY package*.json ./
+#86 CACHED
+
+#87 [tracking-service 5/6] COPY . .
+#87 CACHED
+
+#88 [frontend builder 4/6] RUN npm install
+#88 CACHED
+
+#89 [frontend builder 3/6] COPY package*.json ./
+#89 CACHED
+
+#90 [tracking-service 6/6] RUN npm run build
+#90 CACHED
+
+#91 [transport-service 5/6] COPY . .
+#91 CACHED
+
+#92 [transport-service 4/6] RUN npm install
+#92 CACHED
+
+#58 [frontend 2/6] WORKDIR /app
+#58 CACHED
+
+#93 [transport-service 3/6] COPY package*.json ./
+#93 CACHED
+
+#94 [frontend builder 5/6] COPY . .
+#94 CACHED
+
+#95 [transport-service 6/6] RUN npm run build
+#95 CACHED
+
+#96 [finance-service] exporting to image
+#96 exporting layers done
+#96 exporting manifest sha256:70ada3e46e995136a2d1987e8fd9c9ca443980485c692347b1381d1a30240277 0.0s done
+#96 exporting config sha256:2347f7e78f979ea1ce3738b1e1dd3fb8c6c2d8a5822fb50be960bb04790633c2
+#96 exporting config sha256:2347f7e78f979ea1ce3738b1e1dd3fb8c6c2d8a5822fb50be960bb04790633c2 0.3s done
+#96 exporting attestation manifest sha256:96623014260ea2894d2a634ea7b01063618faa326da9a18369b8e23a24cb87b0
+#96 ...
+
+#60 [api-gateway] exporting to image
+#60 exporting attestation manifest sha256:8d747515c1ed89217409c759e813aa62891c5ecf40d739ec2940f32d17810617 99.5s done
+#60 exporting manifest list sha256:4db9da62cad5d612eaa1c5a193a81d6312c0541eaae1a46ad571d6ef6359cbb7 0.4s done
+#60 naming to docker.io/library/tranport_logistics-api-gateway:latest done
+#60 unpacking to docker.io/library/tranport_logistics-api-gateway:latest 0.2s done
+#60 DONE 1.6s
+
+#97 [transport-service] exporting to image
+#97 exporting layers done
+#97 exporting manifest sha256:fc8769ed5323a3f09e2aeae22daff8fde918e65054551b33d7a1a1e89998e038 99.5s done
+#97 exporting config sha256:5e109848f699c91ab20f28656a4cc48dd3cc54667ba744a1b7a52a9f82163f86 done
+#97 exporting attestation manifest sha256:a192aaf80fe8879ab975b0b7f7af06df1e76ccf796a2bae51ad9ac0835529327
+#97 exporting attestation manifest sha256:a192aaf80fe8879ab975b0b7f7af06df1e76ccf796a2bae51ad9ac0835529327 1.0s done
+#97 exporting manifest list sha256:95458c8e1dcdbff04d147986d42518b589361aad2039c46dd430fe3cf35e93c8
+#97 exporting manifest list sha256:95458c8e1dcdbff04d147986d42518b589361aad2039c46dd430fe3cf35e93c8 0.4s done
+#97 naming to docker.io/library/tranport_logistics-transport-service:latest
+#97 naming to docker.io/library/tranport_logistics-transport-service:latest 0.1s done
+#97 unpacking to docker.io/library/tranport_logistics-transport-service:latest
+#97 ...
+
+#96 [finance-service] exporting to image
+#96 exporting attestation manifest sha256:96623014260ea2894d2a634ea7b01063618faa326da9a18369b8e23a24cb87b0 1.1s done
+#96 exporting manifest list sha256:0cda5eea32016ff533f8e61683816371fc66be2ffd263bad91d06400f8c497c8 0.4s done
+#96 naming to docker.io/library/tranport_logistics-finance-service:latest 0.2s done
+#96 unpacking to docker.io/library/tranport_logistics-finance-service:latest 0.1s done
+#96 DONE -96.5s
+
+#98 [order-service] exporting to image
+#98 exporting layers 0.0s done
+#98 exporting manifest sha256:2d326c897f9fb0e392f3b68eee8796bce4756405c15d1712edf187b237adda8f done
+#98 exporting config sha256:68c00c6b7a5b7553a34c347c7bda9abf05d4f85b928535693cb9ac64acd7ca82 99.5s done
+#98 exporting attestation manifest sha256:a2b9136a86c8e298d4576ce5b99da38ec8feaa4264b23b409bba5cbafc7b68d9 1.1s done
+#98 exporting manifest list sha256:9b11cc8727f8764317820e508a88cbb9ad9d161df7ede2b4ebc37e9abae4356f 0.4s done
+#98 naming to docker.io/library/tranport_logistics-order-service:latest 0.1s done
+#98 unpacking to docker.io/library/tranport_logistics-order-service:latest 0.1s done
+#98 DONE -96.4s
+
+#99 [integration-service] exporting to image
+#99 exporting layers done
+#99 exporting manifest sha256:9994de187fbd2127daedac61b86f056dc23f348d57b0357954cdf70634d73da6 done
+#99 exporting config sha256:8632efd730db1a6910376c23cf9018f3d31027a6596beef7ec2875507c4e482c 99.5s done
+#99 exporting attestation manifest sha256:81c1b7eadba6717d584107faf151bb5b7aff1ef5d87ce9c02b680c87010d9ca7 1.1s done
+#99 exporting manifest list sha256:6143bd5feeafdad7af379001e46e38d930762216729a84511d3361f4773f40a7 0.4s done
+#99 naming to docker.io/library/tranport_logistics-integration-service:latest 0.2s done
+#99 unpacking to docker.io/library/tranport_logistics-integration-service:latest 0.1s done
+#99 DONE -96.5s
+
+#97 [transport-service] exporting to image
+#97 unpacking to docker.io/library/tranport_logistics-transport-service:latest 0.1s done
+#97 DONE 2.6s
+
+#100 [identity-service] exporting to image
+#100 exporting layers done
+#100 exporting manifest sha256:fe5538bf87fcc25c280fdffa01736ab3eb4f38d66594dec7e6e19aa87f25a70b done
+#100 exporting config sha256:0e17215555400001f4c3369bb8735a087701aab6793e0d0666ddedd908f98368 99.5s done
+#100 exporting attestation manifest sha256:2b6257c758408a4b37841c0d70fdbccb94f3d60d10b34f0fcc0378eb74b7fa87 1.1s done
+#100 exporting manifest list sha256:3590662d6d3ffd693cd552fb7ae50de1b2bd47c0ab8da22efa334cea716b6041 0.4s done
+#100 naming to docker.io/library/tranport_logistics-identity-service:latest 0.1s done
+#100 unpacking to docker.io/library/tranport_logistics-identity-service:latest 0.1s done
+#100 DONE -96.4s
+
+#101 [notification-service] exporting to image
+#101 exporting layers done
+#101 exporting manifest sha256:b58b594954b4f0c954309c32f7e33e6bb7282b6f962634c0496589e7f3320881 done
+#101 exporting config sha256:e194a8b089552ea34c3d3d332005f7bc6af0b81846f968212a9550f3fec9fe08 99.4s done
+#101 exporting attestation manifest sha256:227e87ef76c36d2bdb38765f2ab72c8ce757fd89d6f6f89b6dfcac1e5ba5e534 1.1s done
+#101 exporting manifest list sha256:9855198239c0d92d663d3788a4898c047902f81d329e5b3931154bd454bb8715 0.4s done
+#101 naming to docker.io/library/tranport_logistics-notification-service:latest 0.1s done
+#101 unpacking to docker.io/library/tranport_logistics-notification-service:latest 0.1s done
+#101 DONE -96.4s
+
+#102 [tracking-service] exporting to image
+#102 exporting layers done
+#102 exporting manifest sha256:607b49d091976cf005137f17a29b12e32d94e310342eb3bb94b467781e8d5eb0 99.5s done
+#102 exporting config sha256:c8ac08549138141a9e28b32ffc45ed756ad586554a517f0d7829a01664b4ea48 done
+#102 exporting attestation manifest sha256:b59d19875508f4ecd33541c213d062ec1155a34296f56fc5f6a7d5371450d537 1.0s done
+#102 exporting manifest list sha256:7f3d883026fe09030682c0f3b3eb44bc6b62016e5592ee08ef6b809189c80019 0.4s done
+#102 naming to docker.io/library/tranport_logistics-tracking-service:latest 0.1s done
+#102 unpacking to docker.io/library/tranport_logistics-tracking-service:latest 0.1s done
+#102 DONE 2.6s
+
+#103 [erp-service] exporting to image
+#103 exporting layers 0.0s done
+#103 exporting manifest sha256:9219b2d1eb0d3321d44143045ea72cae44553d6c42281570f4a515e799ed072a 0.3s done
+#103 exporting config sha256:695cad6f7ab4b161a899fea2f47c424d7d127681a0d3af6110b1a572029ca512 done
+#103 exporting attestation manifest sha256:700fce0a1a624e9f5006405103f2ae35cf871dc26be55b2ec2989d09b7b846bd 1.1s done
+#103 exporting manifest list sha256:702abb25eb673a2a12d9061c825f441b9d6bb64b02df92378325a2c35489b411 0.4s done
+#103 naming to docker.io/library/tranport_logistics-erp-service:latest 0.1s done
+#103 unpacking to docker.io/library/tranport_logistics-erp-service:latest 0.1s done
+#103 DONE -96.4s
+
+#104 [frontend builder 6/6] RUN npm run build
+#104 -97.630 
+#104 -97.630 > transport-logistics-frontend@1.0.0 build
+#104 -97.630 > tsc && vite build
+#104 -97.630 
+#104 ...
+
+#105 [order-service] resolving provenance for metadata file
+#105 ...
+
+#106 [finance-service] resolving provenance for metadata file
+#106 DONE 1.9s
+
+#107 [analytics-service] resolving provenance for metadata file
+#107 DONE 1.9s
+
+#108 [api-gateway] resolving provenance for metadata file
+#108 DONE 2.0s
+
+#109 [tracking-service] resolving provenance for metadata file
+#109 ...
+
+#110 [ai-service] resolving provenance for metadata file
+#110 DONE 2.1s
+
+#111 [transport-service] resolving provenance for metadata file
+#111 DONE 2.3s
+
+#112 [notification-service] resolving provenance for metadata file
+#112 ...
+
+#105 [order-service] resolving provenance for metadata file
+#105 DONE 2.3s
+
+#113 [integration-service] resolving provenance for metadata file
+#113 DONE 2.3s
+
+#114 [identity-service] resolving provenance for metadata file
+#114 DONE 1.4s
+
+#115 [erp-service] resolving provenance for metadata file
+#115 DONE 1.7s
+
+#112 [notification-service] resolving provenance for metadata file
+#112 DONE 1.1s
+
+#109 [tracking-service] resolving provenance for metadata file
+#109 DONE 0.7s
+
+#104 [frontend builder 6/6] RUN npm run build
+#104 -89.956 src/lib/api.ts(4,24): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+#104 -89.956 src/modules/identity/IdentityModule.tsx(32,25): error TS2323: Cannot redeclare exported variable 'default'.
+#104 -89.956 src/modules/identity/IdentityModule.tsx(32,25): error TS2393: Duplicate function implementation.
+#104 -89.956 src/modules/identity/IdentityModule.tsx(175,25): error TS2323: Cannot redeclare exported variable 'default'.
+#104 -89.955 src/modules/identity/IdentityModule.tsx(175,25): error TS2393: Duplicate function implementation.
+#104 -89.955 src/modules/identity/IdentityModule.tsx(176,32): error TS2774: This condition will always return true since this function is always defined. Did you mean to call it instead?
+#104 -89.955 src/modules/identity/IdentityModule.tsx(176,33): error TS1308: 'await' expressions are only allowed within async functions and at the top levels of modules.
+#104 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 2
+------
+ > [frontend builder 6/6] RUN npm run build:
+-97.630 > transport-logistics-frontend@1.0.0 build
+-97.630 > tsc && vite build
+-97.630 
+-89.956 src/lib/api.ts(4,24): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+-89.956 src/modules/identity/IdentityModule.tsx(32,25): error TS2323: Cannot redeclare exported variable 'default'.
+-89.956 src/modules/identity/IdentityModule.tsx(32,25): error TS2393: Duplicate function implementation.
+-89.956 src/modules/identity/IdentityModule.tsx(175,25): error TS2323: Cannot redeclare exported variable 'default'.
+-89.955 src/modules/identity/IdentityModule.tsx(175,25): error TS2393: Duplicate function implementation.
+-89.955 src/modules/identity/IdentityModule.tsx(176,32): error TS2774: This condition will always return true since this function is always defined. Did you mean to call it instead?
+-89.955 src/modules/identity/IdentityModule.tsx(176,33): error TS1308: 'await' expressions are only allowed within async functions and at the top levels of modules.
+------
+Dockerfile:6
+
+--------------------
+
+   4 |     RUN npm install
+
+   5 |     COPY . .
+
+   6 | >>> RUN npm run build
+
+   7 |     
+
+   8 |     FROM nginx:alpine
+
+--------------------
+
+target frontend: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 2
+

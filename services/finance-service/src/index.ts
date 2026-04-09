@@ -146,7 +146,8 @@ app.get('/summary', async (_req, res) => {
   res.json(s);
 });
 
-const PORT = Number(process.env.PORT_FINANCE ?? 4006);
+// Render assigns $PORT dynamically; PORT_FINANCE used for local Docker
+const PORT = Number(process.env.PORT ?? process.env.PORT_FINANCE ?? 4006);
 app.listen(PORT, '0.0.0.0', () =>
   console.log(`\x1b[33m[finance-service]\x1b[0m Listening on :${PORT}`)
 );

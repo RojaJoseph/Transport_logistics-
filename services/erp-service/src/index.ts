@@ -200,7 +200,8 @@ app.patch('/purchases/:id/approve', async (req, res) => {
   res.json(rows[0]);
 });
 
-const PORT = Number(process.env.PORT_ERP ?? 4001);
+// Render assigns $PORT dynamically; PORT_ERP used for local Docker
+const PORT = Number(process.env.PORT ?? process.env.PORT_ERP ?? 4001);
 app.listen(PORT, '0.0.0.0', () =>
   console.log(`\x1b[35m[erp-service]\x1b[0m Listening on :${PORT}`)
 );

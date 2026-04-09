@@ -47,5 +47,6 @@ async def health():
     }
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT_AI", 8001))
+    # Render assigns $PORT dynamically; PORT_AI used for local Docker
+    port = int(os.getenv("PORT") or os.getenv("PORT_AI", "8001"))
     uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=False, log_level="info")

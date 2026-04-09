@@ -218,5 +218,6 @@ async def ai_savings():
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT_ANALYTICS", 4010))
+    # Render assigns $PORT dynamically; PORT_ANALYTICS used for local Docker
+    port = int(os.getenv("PORT") or os.getenv("PORT_ANALYTICS", "4010"))
     uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=False, log_level="info")

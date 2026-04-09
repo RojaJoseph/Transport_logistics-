@@ -1,0 +1,309 @@
+# ================================================================
+# TransportOS — Render Blueprint
+# Deploy all 11 microservices + managed databases in one click.
+#
+# HOW TO USE:
+#   1. Push this repo to GitHub
+#   2. Go to https://dashboard.render.com/blueprints
+#   3. Click "New Blueprint" → connect your repo
+#   4. Render will detect this file and deploy everything
+#   5. After first deploy, copy each service's URL and fill in
+#      the SERVICE_* env vars on the api-gateway (see step 5 in RENDER_DEPLOY.md)
+# ================================================================
+
+databases:
+  # ── Managed PostgreSQL (free tier — 1GB) ──────────────────────
+  - name: transportos-postgres
+    databaseName: logistics
+    user: logistics
+    plan: free
+    ipAllowList: []   # allow all — restrict in production
+
+services:
+  # ── Managed Redis (free tier — 25MB) ──────────────────────────
+  - type: redis
+    name: transportos-redis
+    plan: free
+    ipAllowList: []
+
+  # ══════════════════════════════════════════════════════════════
+  # 1. IDENTITY SERVICE  (auth / JWT / MFA)
+  # ══════════════════════════════════════════════════════════════
+  - type: web
+    name: transportos-identity-service
+    runtime: node
+    rootDir: services/identity-service
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: transportos-postgres
+          property: connectionString
+      - key: JWT_SECRET
+        sync: false        # ← SET THIS in Render dashboard (min 64 chars)
+      - key: JWT_EXPIRES
+        value: 8h
+
+  # ══════════════════════════════════════════════════════════════
+  # 2. API GATEWAY  (single entry point for frontend)
+  # ══════════════════════════════════════════════════════════════
+  - type: web
+    name: transportos-api-gateway
+    runtime: node
+    rootDir: services/api-gateway
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false        # ← must match identity-service JWT_SECRET
+      - key: ALLOWED_ORIGINS
+        sync: false        # ← SET to: https://transport-logistics-u3dc.onrender.com
+      # ── After first deploy, paste each service's Render URL below ──
+      - key: SERVICE_IDENTITY
+        sync: false        # https://transportos-identity-service.onrender.com
+      - key: SERVICE_ERP
+        sync: false        # https://transportos-erp-service.onrender.com
+      - key: SERVICE_TRANSPORT
+        sync: false        # https://transportos-transport-service.onrender.com
+      - key: SERVICE_TRACKING
+        sync: false        # https://transportos-tracking-service.onrender.com
+      - key: SERVICE_AI
+        sync: false        # https://transportos-ai-service.onrender.com
+      - key: SERVICE_FINANCE
+        sync: false        # https://transportos-finance-service.onrender.com
+      - key: SERVICE_ORDERS
+        sync: false        # https://transportos-order-service.onrender.com
+      - key: SERVICE_NOTIFY
+        sync: false        # https://transportos-notification-service.onrender.com
+      - key: SERVICE_INTEGRATE
+        sync: false        # https://transportos-integration-service.onrender.com
+      - key: SERVICE_ANALYTICS
+        sync: false        # https://transportos-analytics-service.onrender.com
+
+  # ══════════════════════════════════════════════════════════════
+  # 3. ERP SERVICE  (inventory / vendors / warehouses / POs)
+  # ══════════════════════════════════════════════════════════════
+  - type: web
+    name: transportos-erp-service
+    runtime: node
+    rootDir: services/erp-service
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: transportos-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: transportos-redis
+          property: connectionString
+
+  # ══════════════════════════════════════════════════════════════
+  # 4. TRANSPORT SERVICE  (shipments / fleet management)
+  # ══════════════════════════════════════════════════════════════
+  - type: web
+    name: transportos-transport-service
+    runtime: node
+    rootDir: services/transport-service
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: transportos-postgres
+          property: connectionString
+
+  # ══════════════════════════════════════════════════════════════
+  # 5. TRACKING SERVICE  (real-time GPS / Socket.IO / MQTT)
+  # ══════════════════════════════════════════════════════════════
+  - type: web
+    name: transportos-tracking-service
+    runtime: node
+    rootDir: services/tracking-service
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URL
+        sync: false        # ← SET THIS: MongoDB Atlas connection string
+                           #   mongodb+srv://user:pass@cluster.mongodb.net/tracking
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: transportos-redis
+          property: connectionString
+      - key: MQTT_URL
+        value: ""          # Optional — leave blank to disable IoT ingest
+      - key: MQTT_USER
+        value: ""
+      - key: MQTT_PASS
+        value: ""
+
+  # ══════════════════════════════════════════════════════════════
+  # 6. ORDER SERVICE  (orders / status / events)
+  # ══════════════════════════════════════════════════════════════
+  - type: web
+    name: transportos-order-service
+    runtime: node
+    rootDir: services/order-service
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: transportos-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: transportos-redis
+          property: connectionString
+
+  # ══════════════════════════════════════════════════════════════
+  # 7. FINANCE SERVICE  (invoices / payments / Stripe)
+  # ══════════════════════════════════════════════════════════════
+  - type: web
+    name: transportos-finance-service
+    runtime: node
+    rootDir: services/finance-service
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: transportos-postgres
+          property: connectionString
+      - key: STRIPE_SECRET_KEY
+        sync: false        # Optional — leave blank for demo mode
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false        # Optional
+
+  # ══════════════════════════════════════════════════════════════
+  # 8. NOTIFICATION SERVICE  (email / SMS / in-app)
+  # ══════════════════════════════════════════════════════════════
+  - type: web
+    name: transportos-notification-service
+    runtime: node
+    rootDir: services/notification-service
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: transportos-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: transportos-redis
+          property: connectionString
+      - key: SENDGRID_API_KEY
+        sync: false        # Optional — leave blank for demo/console mode
+      - key: SENDGRID_FROM_EMAIL
+        value: noreply@transportos.com
+      - key: TWILIO_ACCOUNT_SID
+        sync: false        # Optional
+      - key: TWILIO_AUTH_TOKEN
+        sync: false        # Optional
+      - key: TWILIO_PHONE_NUMBER
+        sync: false        # Optional
+
+  # ══════════════════════════════════════════════════════════════
+  # 9. INTEGRATION SERVICE  (carriers / webhooks / EDI)
+  # ══════════════════════════════════════════════════════════════
+  - type: web
+    name: transportos-integration-service
+    runtime: node
+    rootDir: services/integration-service
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: transportos-postgres
+          property: connectionString
+
+  # ══════════════════════════════════════════════════════════════
+  # 10. ANALYTICS SERVICE  (Python / KPIs / trends)
+  # ══════════════════════════════════════════════════════════════
+  - type: web
+    name: transportos-analytics-service
+    runtime: python
+    rootDir: services/analytics-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: transportos-postgres
+          property: connectionString
+      - key: ALLOWED_ORIGINS
+        sync: false        # ← SET to frontend URL
+
+  # ══════════════════════════════════════════════════════════════
+  # 11. AI SERVICE  (Python / FastAPI / ML / Chat)
+  # ══════════════════════════════════════════════════════════════
+  - type: web
+    name: transportos-ai-service
+    runtime: python
+    rootDir: services/ai-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: transportos-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: transportos-redis
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false        # Optional
+      - key: ANTHROPIC_API_KEY
+        sync: false        # Optional
+      - key: ALLOWED_ORIGINS
+        sync: false        # ← SET to frontend URL

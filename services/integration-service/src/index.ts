@@ -167,7 +167,8 @@ app.get('/events', async (req, res) => {
   res.json({ data: rows, total: rows.length });
 });
 
-const PORT = Number(process.env.PORT_INTEGRATE ?? 4009);
+// Render assigns $PORT dynamically; PORT_INTEGRATE used for local Docker
+const PORT = Number(process.env.PORT ?? process.env.PORT_INTEGRATE ?? 4009);
 app.listen(PORT, '0.0.0.0', () =>
   console.log(`\x1b[35m[integration-service]\x1b[0m Listening on :${PORT}`)
 );

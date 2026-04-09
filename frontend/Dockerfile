@@ -20,4 +20,4 @@ ENV VITE_API_GATEWAY=$VITE_API_GATEWAY
 ENV VITE_WS_TRACKING=$VITE_WS_TRACKING
 
 # Build project
-RUN npm run build
+RUN npx tsc && npx vite build

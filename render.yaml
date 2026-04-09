@@ -1,33 +1,17 @@
 # ================================================================
-# TransportOS — Render Blueprint
-# Deploy all 11 microservices + managed databases in one click.
-#
-# HOW TO USE:
-#   1. Push this repo to GitHub
-#   2. Go to https://dashboard.render.com/blueprints
-#   3. Click "New Blueprint" → connect your repo
-#   4. Render will detect this file and deploy everything
-#   5. After first deploy, copy each service's URL and fill in
-#      the SERVICE_* env vars on the api-gateway (see step 5 in RENDER_DEPLOY.md)
+# TransportOS — Render Blueprint (FIXED VERSION)
+# Uses EXISTING PostgreSQL instead of creating new one
 # ================================================================
 
-databases:
-  # ── Managed PostgreSQL (free tier — 1GB) ──────────────────────
-  - name: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a/school_erp_db_adv0
-    databaseName: logistics
-    user: logistics
-    plan: free
-    ipAllowList: []   # allow all — restrict in production
-
 services:
-  # ── Managed Redis (free tier — 25MB) ──────────────────────────
+  # ── Redis ─────────────────────────────────────────────────────
   - type: redis
     name: transportos-redis
     plan: free
     ipAllowList: []
 
   # ══════════════════════════════════════════════════════════════
-  # 1. IDENTITY SERVICE  (auth / JWT / MFA)
+  # 1. IDENTITY SERVICE
   # ══════════════════════════════════════════════════════════════
   - type: web
     name: transportos-identity-service
@@ -41,16 +25,14 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
+        sync: false   # 🔥 SET MANUALLY
       - key: JWT_SECRET
-        sync: false        # ← SET THIS in Render dashboard (min 64 chars)
+        sync: false
       - key: JWT_EXPIRES
         value: 8h
 
   # ══════════════════════════════════════════════════════════════
-  # 2. API GATEWAY  (single entry point for frontend)
+  # 2. API GATEWAY
   # ══════════════════════════════════════════════════════════════
   - type: web
     name: transportos-api-gateway
@@ -64,33 +46,32 @@ services:
       - key: NODE_ENV
         value: production
       - key: JWT_SECRET
-        sync: false        # ← must match identity-service JWT_SECRET
+        sync: false
       - key: ALLOWED_ORIGINS
-        sync: false        # ← SET to: https://transport-logistics-u3dc.onrender.com
-      # ── After first deploy, paste each service's Render URL below ──
+        sync: false
       - key: SERVICE_IDENTITY
-        sync: false        # https://transportos-identity-service.onrender.com
+        sync: false
       - key: SERVICE_ERP
-        sync: false        # https://transportos-erp-service.onrender.com
+        sync: false
       - key: SERVICE_TRANSPORT
-        sync: false        # https://transportos-transport-service.onrender.com
+        sync: false
       - key: SERVICE_TRACKING
-        sync: false        # https://transportos-tracking-service.onrender.com
+        sync: false
       - key: SERVICE_AI
-        sync: false        # https://transportos-ai-service.onrender.com
+        sync: false
       - key: SERVICE_FINANCE
-        sync: false        # https://transportos-finance-service.onrender.com
+        sync: false
       - key: SERVICE_ORDERS
-        sync: false        # https://transportos-order-service.onrender.com
+        sync: false
       - key: SERVICE_NOTIFY
-        sync: false        # https://transportos-notification-service.onrender.com
+        sync: false
       - key: SERVICE_INTEGRATE
-        sync: false        # https://transportos-integration-service.onrender.com
+        sync: false
       - key: SERVICE_ANALYTICS
-        sync: false        # https://transportos-analytics-service.onrender.com
+        sync: false
 
   # ══════════════════════════════════════════════════════════════
-  # 3. ERP SERVICE  (inventory / vendors / warehouses / POs)
+  # 3. ERP SERVICE
   # ══════════════════════════════════════════════════════════════
   - type: web
     name: transportos-erp-service
@@ -104,9 +85,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
+        sync: false
       - key: REDIS_URL
         fromService:
           type: redis
@@ -114,7 +93,7 @@ services:
           property: connectionString
 
   # ══════════════════════════════════════════════════════════════
-  # 4. TRANSPORT SERVICE  (shipments / fleet management)
+  # 4. TRANSPORT SERVICE
   # ══════════════════════════════════════════════════════════════
   - type: web
     name: transportos-transport-service
@@ -128,12 +107,10 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
+        sync: false
 
   # ══════════════════════════════════════════════════════════════
-  # 5. TRACKING SERVICE  (real-time GPS / Socket.IO / MQTT)
+  # 5. TRACKING SERVICE
   # ══════════════════════════════════════════════════════════════
   - type: web
     name: transportos-tracking-service
@@ -147,22 +124,15 @@ services:
       - key: NODE_ENV
         value: production
       - key: MONGO_URL
-        sync: false        # ← SET THIS: MongoDB Atlas connection string
-                           #   mongodb+srv://user:pass@cluster.mongodb.net/tracking
+        sync: false
       - key: REDIS_URL
         fromService:
           type: redis
           name: transportos-redis
           property: connectionString
-      - key: MQTT_URL
-        value: ""          # Optional — leave blank to disable IoT ingest
-      - key: MQTT_USER
-        value: ""
-      - key: MQTT_PASS
-        value: ""
 
   # ══════════════════════════════════════════════════════════════
-  # 6. ORDER SERVICE  (orders / status / events)
+  # 6. ORDER SERVICE
   # ══════════════════════════════════════════════════════════════
   - type: web
     name: transportos-order-service
@@ -176,17 +146,10 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: transportos-redis
-          property: connectionString
+        sync: false
 
   # ══════════════════════════════════════════════════════════════
-  # 7. FINANCE SERVICE  (invoices / payments / Stripe)
+  # 7. FINANCE SERVICE
   # ══════════════════════════════════════════════════════════════
   - type: web
     name: transportos-finance-service
@@ -200,16 +163,12 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
+        sync: false
       - key: STRIPE_SECRET_KEY
-        sync: false        # Optional — leave blank for demo mode
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false        # Optional
+        sync: false
 
   # ══════════════════════════════════════════════════════════════
-  # 8. NOTIFICATION SERVICE  (email / SMS / in-app)
+  # 8. NOTIFICATION SERVICE
   # ══════════════════════════════════════════════════════════════
   - type: web
     name: transportos-notification-service
@@ -223,27 +182,10 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: transportos-redis
-          property: connectionString
-      - key: SENDGRID_API_KEY
-        sync: false        # Optional — leave blank for demo/console mode
-      - key: SENDGRID_FROM_EMAIL
-        value: noreply@transportos.com
-      - key: TWILIO_ACCOUNT_SID
-        sync: false        # Optional
-      - key: TWILIO_AUTH_TOKEN
-        sync: false        # Optional
-      - key: TWILIO_PHONE_NUMBER
-        sync: false        # Optional
+        sync: false
 
   # ══════════════════════════════════════════════════════════════
-  # 9. INTEGRATION SERVICE  (carriers / webhooks / EDI)
+  # 9. INTEGRATION SERVICE
   # ══════════════════════════════════════════════════════════════
   - type: web
     name: transportos-integration-service
@@ -257,12 +199,10 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
+        sync: false
 
   # ══════════════════════════════════════════════════════════════
-  # 10. ANALYTICS SERVICE  (Python / KPIs / trends)
+  # 10. ANALYTICS SERVICE
   # ══════════════════════════════════════════════════════════════
   - type: web
     name: transportos-analytics-service
@@ -274,14 +214,10 @@ services:
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
-      - key: ALLOWED_ORIGINS
-        sync: false        # ← SET to frontend URL
+        sync: false
 
   # ══════════════════════════════════════════════════════════════
-  # 11. AI SERVICE  (Python / FastAPI / ML / Chat)
+  # 11. AI SERVICE
   # ══════════════════════════════════════════════════════════════
   - type: web
     name: transportos-ai-service
@@ -293,17 +229,4 @@ services:
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: transportos-redis
-          property: connectionString
-      - key: OPENAI_API_KEY
-        sync: false        # Optional
-      - key: ANTHROPIC_API_KEY
-        sync: false        # Optional
-      - key: ALLOWED_ORIGINS
-        sync: false        # ← SET to frontend URL
+        sync: false

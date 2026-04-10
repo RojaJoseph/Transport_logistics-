@@ -18,7 +18,6 @@ app.use(cors({
   credentials: true,
 }));
 
-// Rate limiting
 app.use('/auth', rateLimit({ windowMs: 60_000, max: 30 }));
 app.use(rateLimit({ windowMs: 60_000, max: 2000 }));
 
@@ -87,18 +86,17 @@ const svc = (envKey: string, defaultPort: number): string => {
   return `${host}:${defaultPort}`;
 };
 
-// 🔥 IMPORTANT DEBUG
+// 🔥 Debug
 console.log("IDENTITY SERVICE URL:", svc('IDENTITY_SERVICE_URL', 4005));
 
 // ─────────────────────────────────────────
-// ✅ ROUTES MAP
+// ✅ ROUTES (NO /identity HERE ❌)
 // ─────────────────────────────────────────
 const ROUTES: Record<string, string> = {
   '/erp':           svc('ERP_SERVICE_URL',       4001),
   '/transport':     svc('TRANSPORT_SERVICE_URL', 4002),
   '/tracking':      svc('TRACKING_SERVICE_URL',  4003),
   '/ai':            svc('AI_SERVICE_URL',        8001),
-  '/identity':      svc('IDENTITY_SERVICE_URL',  4005),
   '/finance':       svc('FINANCE_SERVICE_URL',   4006),
   '/orders':        svc('ORDER_SERVICE_URL',     4007),
   '/notifications': svc('NOTIFY_SERVICE_URL',    4008),
@@ -107,7 +105,7 @@ const ROUTES: Record<string, string> = {
 };
 
 // ─────────────────────────────────────────
-// ✅ AUTH (PUBLIC)
+// ✅ AUTH ROUTE (ONLY THIS HANDLES LOGIN)
 // ─────────────────────────────────────────
 app.use('/auth', createProxyMiddleware({
   target: svc('IDENTITY_SERVICE_URL', 4005),
@@ -122,13 +120,14 @@ app.use('/auth', createProxyMiddleware({
   secure: false,
 
   on: {
-    error: (err, req, res) => {
+    error: (err: any, req: any, res: any) => {
       console.error('[GW] Identity error:', err.message);
 
-      // ⚠️ FIX: safe response handling
-      if ('writeHead' in res) {
+      if (res && typeof res.writeHead === 'function') {
         res.writeHead(503, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Identity service unavailable' }));
+        res.end(JSON.stringify({
+          error: 'Identity service unavailable',
+        }));
       }
     }
   }
@@ -151,10 +150,10 @@ for (const [path, target] of Object.entries(ROUTES)) {
     secure: false,
 
     on: {
-      error: (err, req, res) => {
+      error: (err: any, req: any, res: any) => {
         console.error(`[GW] ${path} error:`, err.message);
 
-        if ('writeHead' in res) {
+        if (res && typeof res.writeHead === 'function') {
           res.writeHead(503, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
             error: `Service ${path} unavailable`,

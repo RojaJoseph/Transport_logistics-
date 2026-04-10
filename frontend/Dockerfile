@@ -30,6 +30,9 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# ✅ only production deps here
+RUN npm ci --omit=dev
+
 # Render uses 10000
 EXPOSE 10000
 

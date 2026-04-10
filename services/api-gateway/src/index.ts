@@ -92,21 +92,24 @@ const ROUTES: Record<string, string> = {
 };
 
 // ── AUTH (PUBLIC) ──────────────────────────────────────
-app.use('/auth', createProxyMiddleware({
-  target: svc('IDENTITY_SERVICE_URL', 4005),
-  changeOrigin: true,
-  pathRewrite: { '^/auth': '' },
-  timeout: 15000,
-  proxyTimeout: 15000,
-  secure: false,
+for (const [path, target] of Object.entries(ROUTES)) {
+  app.use(path, verifyJWT, createProxyMiddleware({
+    target,
+    changeOrigin: true,
+    pathRewrite: { [`^${path}`]: '' },
 
-  on: {
-    error: (err: any, req: any, res: any) => {
-      console.error('[GW] Identity proxy error:', err.message);
-      res.status(503).json({ error: 'Identity service unavailable' });
+    timeout: 15000,
+    proxyTimeout: 15000,
+    secure: false,
+
+    on: {
+      error: (err: any, req: any, res: any) => {
+        console.error(`[GW] Proxy error (${path}):`, err.message);
+        res.status(503).json({ error: `Service ${path} unavailable` });
+      }
     }
-  }
-}));
+  }));
+}
 
 // ── PROTECTED ROUTES ───────────────────────────────────
 for (const [path, target] of Object.entries(ROUTES)) {

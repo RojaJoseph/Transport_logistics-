@@ -76,21 +76,12 @@ function verifyJWT(req: any, res: Response, next: NextFunction) {
 }
 
 // ─────────────────────────────────────────
-// ✅ Service Resolver (IMPORTANT FIX)
+// ✅ DEBUG
 // ─────────────────────────────────────────
-const svc = (envKey: string, defaultPort: number): string => {
-  const url = process.env[envKey];
-  if (url) return url;
-
-  const host = process.env.SERVICE_HOST ?? 'http://127.0.0.1';
-  return `${host}:${defaultPort}`;
-};
-
-// 🔥 Debug
-console.log("🔥 IDENTITY SERVICE URL:", svc('IDENTITY_SERVICE_URL', 4005));
+console.log("🔥 IDENTITY SERVICE URL:", process.env.IDENTITY_SERVICE_URL);
 
 // ─────────────────────────────────────────
-// ✅ ROUTES (SAFE)
+// ✅ ROUTES
 // ─────────────────────────────────────────
 const ROUTES: Record<string, string | undefined> = {
   '/erp': process.env.ERP_SERVICE_URL,
@@ -105,23 +96,22 @@ const ROUTES: Record<string, string | undefined> = {
 };
 
 // ─────────────────────────────────────────
-// ✅ AUTH ROUTE (FIXED – BODY FORWARDING)
+// ✅ AUTH ROUTE (CRITICAL FIX)
 // ─────────────────────────────────────────
 app.use('/auth', createProxyMiddleware({
-  target: svc('IDENTITY_SERVICE_URL', 4005),
+  target: process.env.IDENTITY_SERVICE_URL || 'https://transportos-identity.onrender.com',
+
   changeOrigin: true,
+  pathRewrite: { '^/auth': '' },
 
-  pathRewrite: {
-    '^/auth': '',
-  },
-
-  timeout: 30000,
-  proxyTimeout: 30000,
+  timeout: 60000,
+  proxyTimeout: 60000,
   secure: false,
   xfwd: true,
 
   on: {
     proxyReq: (proxyReq, req: any) => {
+      // 🔥 FIX: forward body
       if (req.body && Object.keys(req.body).length) {
         const bodyData = JSON.stringify(req.body);
 
@@ -130,7 +120,7 @@ app.use('/auth', createProxyMiddleware({
         proxyReq.write(bodyData);
       }
 
-      console.log('[GW] Forwarding AUTH:', req.url);
+      console.log('[GW] AUTH → Identity:', req.url);
     },
 
     proxyRes: (proxyRes) => {
@@ -144,7 +134,7 @@ app.use('/auth', createProxyMiddleware({
         res.writeHead(503, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           error: 'Identity service unavailable',
-          detail: err.message
+          debug: err.message
         }));
       }
     }
@@ -170,8 +160,8 @@ for (const [path, target] of Object.entries(ROUTES)) {
       [`^${path}`]: '',
     },
 
-    timeout: 20000,
-    proxyTimeout: 20000,
+    timeout: 30000,
+    proxyTimeout: 30000,
     secure: false,
 
     on: {

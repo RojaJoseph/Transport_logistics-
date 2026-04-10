@@ -14,4 +14,4 @@ COPY . .
 ENV PORT=10000
 
 # Run app (adjust if using FastAPI / Flask)
-CMD ["python", "app/main.py"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "10000"]

@@ -1,32 +1,12 @@
-# ================================================================
-# TransportOS — Render.com Deployment
-# Deploy everything: push to GitHub → connect to Render → done.
-# All databases are auto-created by the services on first boot.
-# ================================================================
-
 services:
-  # ── PostgreSQL (Render managed DB) ────────────────────────────
-  - type: pserv
-    name: transportos-postgres
-    plan: free
-    env: docker
-    image:
-      url: docker.io/library/postgres:16-alpine
-    envVars:
-      - key: POSTGRES_DB
-        value: logistics
-      - key: POSTGRES_USER
-        value: logistics
-      - key: POSTGRES_PASSWORD
-        generateValue: true
 
-  # ── Redis (Render managed Redis) ──────────────────────────────
+  # ── Redis ──────────────────────────────
   - type: redis
     name: transportos-redis
     plan: free
     ipAllowList: []
 
-  # ── Identity Service ──────────────────────────────────────────
+  # ── Identity Service ───────────────────
   - type: web
     name: transportos-identity
     plan: free
@@ -35,10 +15,7 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
-        fromService:
-          name: transportos-postgres
-          type: pserv
-          property: connectionString
+        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES
@@ -46,7 +23,7 @@ services:
       - key: NODE_ENV
         value: production
 
-  # ── ERP Service ───────────────────────────────────────────────
+  # ── ERP Service ────────────────────────
   - type: web
     name: transportos-erp
     plan: free
@@ -55,10 +32,7 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
-        fromService:
-          name: transportos-postgres
-          type: pserv
-          property: connectionString
+        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
       - key: REDIS_URL
         fromService:
           name: transportos-redis
@@ -67,7 +41,7 @@ services:
       - key: NODE_ENV
         value: production
 
-  # ── Transport Service ─────────────────────────────────────────
+  # ── Transport Service ──────────────────
   - type: web
     name: transportos-transport
     plan: free
@@ -76,14 +50,11 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
-        fromService:
-          name: transportos-postgres
-          type: pserv
-          property: connectionString
+        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
       - key: NODE_ENV
         value: production
 
-  # ── Order Service ─────────────────────────────────────────────
+  # ── Orders Service ─────────────────────
   - type: web
     name: transportos-orders
     plan: free
@@ -92,10 +63,7 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
-        fromService:
-          name: transportos-postgres
-          type: pserv
-          property: connectionString
+        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
       - key: REDIS_URL
         fromService:
           name: transportos-redis
@@ -104,7 +72,7 @@ services:
       - key: NODE_ENV
         value: production
 
-  # ── Finance Service ───────────────────────────────────────────
+  # ── Finance Service ────────────────────
   - type: web
     name: transportos-finance
     plan: free
@@ -113,16 +81,13 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
-        fromService:
-          name: transportos-postgres
-          type: pserv
-          property: connectionString
+        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
       - key: STRIPE_SECRET_KEY
         value: ""
       - key: NODE_ENV
         value: production
 
-  # ── Notification Service ──────────────────────────────────────
+  # ── Notification Service ───────────────
   - type: web
     name: transportos-notify
     plan: free
@@ -131,23 +96,16 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
-        fromService:
-          name: transportos-postgres
-          type: pserv
-          property: connectionString
+        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
       - key: REDIS_URL
         fromService:
           name: transportos-redis
           type: redis
           property: connectionString
-      - key: SENDGRID_API_KEY
-        value: ""
-      - key: TWILIO_ACCOUNT_SID
-        value: ""
       - key: NODE_ENV
         value: production
 
-  # ── Integration Service ───────────────────────────────────────
+  # ── Integration Service ────────────────
   - type: web
     name: transportos-integration
     plan: free
@@ -156,14 +114,11 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
-        fromService:
-          name: transportos-postgres
-          type: pserv
-          property: connectionString
+        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
       - key: NODE_ENV
         value: production
 
-  # ── AI Service ────────────────────────────────────────────────
+  # ── AI Service ─────────────────────────
   - type: web
     name: transportos-ai
     plan: free
@@ -172,16 +127,11 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
-        fromService:
-          name: transportos-postgres
-          type: pserv
-          property: connectionString
-      - key: ANTHROPIC_API_KEY
-        value: ""
+        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
       - key: OPENAI_API_KEY
         value: ""
 
-  # ── Analytics Service ─────────────────────────────────────────
+  # ── Analytics Service ──────────────────
   - type: web
     name: transportos-analytics
     plan: free
@@ -190,12 +140,9 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
-        fromService:
-          name: transportos-postgres
-          type: pserv
-          property: connectionString
+        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
 
-  # ── API Gateway ───────────────────────────────────────────────
+  # ── API Gateway ───────────────────────
   - type: web
     name: transportos-gateway
     plan: free
@@ -212,51 +159,36 @@ services:
         fromService:
           name: transportos-identity
           type: web
-          property: host
+          property: url
       - key: ERP_SERVICE_URL
         fromService:
           name: transportos-erp
           type: web
-          property: host
+          property: url
       - key: TRANSPORT_SERVICE_URL
         fromService:
           name: transportos-transport
           type: web
-          property: host
+          property: url
       - key: ORDER_SERVICE_URL
         fromService:
           name: transportos-orders
           type: web
-          property: host
+          property: url
       - key: FINANCE_SERVICE_URL
         fromService:
           name: transportos-finance
           type: web
-          property: host
+          property: url
       - key: NOTIFY_SERVICE_URL
         fromService:
           name: transportos-notify
           type: web
-          property: host
-      - key: INTEGRATE_SERVICE_URL
-        fromService:
-          name: transportos-integration
-          type: web
-          property: host
-      - key: AI_SERVICE_URL
-        fromService:
-          name: transportos-ai
-          type: web
-          property: host
-      - key: ANALYTICS_SERVICE_URL
-        fromService:
-          name: transportos-analytics
-          type: web
-          property: host
+          property: url
       - key: NODE_ENV
         value: production
 
-  # ── Frontend ──────────────────────────────────────────────────
+  # ── Frontend ───────────────────────────
   - type: web
     name: transportos-frontend
     plan: free
@@ -268,9 +200,4 @@ services:
         fromService:
           name: transportos-gateway
           type: web
-          property: host
-      - key: VITE_WS_TRACKING
-        fromService:
-          name: transportos-tracking
-          type: web
-          property: host
+          property: url

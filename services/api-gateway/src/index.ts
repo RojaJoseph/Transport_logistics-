@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -8,18 +8,26 @@ import jwt from 'jsonwebtoken';
 
 const app = express();
 
-// ── Middleware ─────────────────────────────────────────
+// ─────────────────────────────────────────────────────
+// ✅ Middleware
+// ─────────────────────────────────────────────────────
 app.use(helmet());
-app.use(cors({ origin: '*', credentials: true }));
 
-// Rate limits
+app.use(cors({
+  origin: '*',
+  credentials: true,
+}));
+
+// Rate limiting
 app.use('/auth', rateLimit({ windowMs: 60_000, max: 30 }));
 app.use(rateLimit({ windowMs: 60_000, max: 2000 }));
 
 app.use(express.json({ limit: '10mb' }));
 
-// ── Logging ────────────────────────────────────────────
-app.use((req, res, next) => {
+// ─────────────────────────────────────────────────────
+// ✅ Logging Middleware
+// ─────────────────────────────────────────────────────
+app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
 
   res.on('finish', () => {
@@ -36,48 +44,55 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── Health Check ───────────────────────────────────────
-app.get('/health', (_req, res) => {
+// ─────────────────────────────────────────────────────
+// ✅ Health Check
+// ─────────────────────────────────────────────────────
+app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     service: 'api-gateway',
-    ts: new Date().toISOString(),
+    time: new Date().toISOString(),
   });
 });
 
-// ── JWT Middleware ─────────────────────────────────────
+// ─────────────────────────────────────────────────────
+// ✅ JWT Middleware
+// ─────────────────────────────────────────────────────
 const JWT_SECRET =
   process.env.JWT_SECRET ?? 'transportos_secret_change_in_production!!';
 
-function verifyJWT(req: any, res: express.Response, next: express.NextFunction) {
+function verifyJWT(req: any, res: Response, next: NextFunction) {
   const auth = req.headers.authorization;
 
-  if (!auth?.startsWith('Bearer ')) {
+  if (!auth || !auth.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing Authorization header' });
   }
 
   try {
     req.user = jwt.verify(auth.slice(7), JWT_SECRET);
     next();
-  } catch {
-    res.status(401).json({ error: 'Token expired or invalid' });
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
   }
 }
 
-// ── Service Resolver ───────────────────────────────────
+// ─────────────────────────────────────────────────────
+// ✅ Service Resolver (Render + Local)
+// ─────────────────────────────────────────────────────
 const svc = (envKey: string, defaultPort: number): string => {
   const url = process.env[envKey];
   if (url) return url;
 
-  // Local fallback
   const host = process.env.SERVICE_HOST ?? 'http://127.0.0.1';
   return `${host}:${defaultPort}`;
 };
 
-// 🔍 Debug logs (important for Render)
-console.log("IDENTITY URL:", svc('IDENTITY_SERVICE_URL', 4005));
+// 🔥 Debug log (VERY IMPORTANT)
+console.log("IDENTITY SERVICE URL:", svc('IDENTITY_SERVICE_URL', 4005));
 
-// ── Service Routes ─────────────────────────────────────
+// ─────────────────────────────────────────────────────
+// ✅ Service Routes
+// ─────────────────────────────────────────────────────
 const ROUTES: Record<string, string> = {
   '/erp':           svc('ERP_SERVICE_URL',       4001),
   '/transport':     svc('TRANSPORT_SERVICE_URL', 4002),
@@ -91,50 +106,65 @@ const ROUTES: Record<string, string> = {
   '/analytics':     svc('ANALYTICS_SERVICE_URL', 4010),
 };
 
-// ── AUTH (PUBLIC) ──────────────────────────────────────
+// ─────────────────────────────────────────────────────
+// ✅ AUTH ROUTE (PUBLIC) 🔥 CRITICAL
+// ─────────────────────────────────────────────────────
+app.use('/auth', createProxyMiddleware({
+  target: svc('IDENTITY_SERVICE_URL', 4005),
+  changeOrigin: true,
+
+  // Remove /auth prefix
+  pathRewrite: {
+    '^/auth': '',
+  },
+
+  timeout: 15000,
+  proxyTimeout: 15000,
+  secure: false,
+
+  on: {
+    error: (err: any, req: Request, res: Response) => {
+      console.error('[GW] Identity service error:', err.message);
+      res.status(503).json({
+        error: 'Identity service unavailable',
+      });
+    }
+  }
+}));
+
+// ─────────────────────────────────────────────────────
+// ✅ PROTECTED ROUTES
+// ─────────────────────────────────────────────────────
 for (const [path, target] of Object.entries(ROUTES)) {
   app.use(path, verifyJWT, createProxyMiddleware({
     target,
     changeOrigin: true,
-    pathRewrite: { [`^${path}`]: '' },
+
+    pathRewrite: {
+      [`^${path}`]: '',
+    },
 
     timeout: 15000,
     proxyTimeout: 15000,
     secure: false,
 
     on: {
-      error: (err: any, req: any, res: any) => {
-        console.error(`[GW] Proxy error (${path}):`, err.message);
-        res.status(503).json({ error: `Service ${path} unavailable` });
+      error: (err: any, req: Request, res: Response) => {
+        console.error(`[GW] ${path} error:`, err.message);
+        res.status(503).json({
+          error: `Service ${path} unavailable`,
+        });
       }
     }
   }));
 }
 
-// ── PROTECTED ROUTES ───────────────────────────────────
-for (const [path, target] of Object.entries(ROUTES)) {
-  app.use(path, verifyJWT, createProxyMiddleware({
-    target,
-    changeOrigin: true,
-
-    pathRewrite: { [`^${path}`]: '' },
-
-    timeout: 15000,
-    proxyTimeout: 15000,
-
-    secure: false, // ← IMPORTANT
-
-    onError: (err, req, res: any) => {
-      console.error(`[GW] Proxy error (${path}):`, err.message);
-      res.status(503).json({ error: `Service ${path} unavailable` });
-    },
-  }));
-}
-
-// ── START SERVER ───────────────────────────────────────
+// ─────────────────────────────────────────────────────
+// ✅ START SERVER
+// ─────────────────────────────────────────────────────
 const PORT = Number(process.env.PORT ?? 4000);
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\x1b[36m[api-gateway]\x1b[0m running on port ${PORT}`);
+  console.log(`\x1b[36m[API-GATEWAY]\x1b[0m running on port ${PORT}`);
   console.log(`Routes: ${Object.keys(ROUTES).join(', ')}`);
 });

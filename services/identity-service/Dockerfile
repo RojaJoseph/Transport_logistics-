@@ -1,17 +1,19 @@
 FROM node:20-alpine AS builder
+
 WORKDIR /app
 
 COPY package*.json ./
 
-# ✅ ADD THIS LINE
 RUN npm ci
 
 COPY . .
 
-RUN npm run build
+# ✅ FIX PERMISSION ISSUE HERE
+RUN chmod +x node_modules/.bin/tsc && npm run build
 
 
 FROM node:20-alpine
+
 WORKDIR /app
 
 COPY --from=builder /app/dist ./dist

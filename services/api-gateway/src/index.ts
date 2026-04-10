@@ -76,49 +76,75 @@ function verifyJWT(req: any, res: Response, next: NextFunction) {
 }
 
 // ─────────────────────────────────────────
-// ✅ ENV DEBUG (VERY IMPORTANT)
+// ✅ Service Resolver (IMPORTANT FIX)
 // ─────────────────────────────────────────
-console.log("🔥 FINAL IDENTITY URL:", process.env.IDENTITY_SERVICE_URL);
+const svc = (envKey: string, defaultPort: number): string => {
+  const url = process.env[envKey];
+  if (url) return url;
+
+  const host = process.env.SERVICE_HOST ?? 'http://127.0.0.1';
+  return `${host}:${defaultPort}`;
+};
+
+// 🔥 Debug
+console.log("🔥 IDENTITY SERVICE URL:", svc('IDENTITY_SERVICE_URL', 4005));
 
 // ─────────────────────────────────────────
-// ✅ ROUTES (NO /identity here ❌)
+// ✅ ROUTES (SAFE)
 // ─────────────────────────────────────────
-const ROUTES: Record<string, string> = {
-  '/erp':           process.env.ERP_SERVICE_URL!,
-  '/transport':     process.env.TRANSPORT_SERVICE_URL!,
-  '/tracking':      process.env.TRACKING_SERVICE_URL!,
-  '/ai':            process.env.AI_SERVICE_URL!,
-  '/finance':       process.env.FINANCE_SERVICE_URL!,
-  '/orders':        process.env.ORDER_SERVICE_URL!,
-  '/notifications': process.env.NOTIFY_SERVICE_URL!,
-  '/integrations':  process.env.INTEGRATE_SERVICE_URL!,
-  '/analytics':     process.env.ANALYTICS_SERVICE_URL!,
+const ROUTES: Record<string, string | undefined> = {
+  '/erp': process.env.ERP_SERVICE_URL,
+  '/transport': process.env.TRANSPORT_SERVICE_URL,
+  '/tracking': process.env.TRACKING_SERVICE_URL,
+  '/ai': process.env.AI_SERVICE_URL,
+  '/finance': process.env.FINANCE_SERVICE_URL,
+  '/orders': process.env.ORDER_SERVICE_URL,
+  '/notifications': process.env.NOTIFY_SERVICE_URL,
+  '/integrations': process.env.INTEGRATE_SERVICE_URL,
+  '/analytics': process.env.ANALYTICS_SERVICE_URL,
 };
 
 // ─────────────────────────────────────────
-// ✅ AUTH ROUTE (PUBLIC)
+// ✅ AUTH ROUTE (FIXED – BODY FORWARDING)
 // ─────────────────────────────────────────
 app.use('/auth', createProxyMiddleware({
-  target: process.env.IDENTITY_SERVICE_URL!,   // 🔥 FIXED
+  target: svc('IDENTITY_SERVICE_URL', 4005),
   changeOrigin: true,
-  xfwd: true,
 
   pathRewrite: {
     '^/auth': '',
   },
 
-  timeout: 20000,
-  proxyTimeout: 20000,
+  timeout: 30000,
+  proxyTimeout: 30000,
   secure: false,
+  xfwd: true,
 
   on: {
+    proxyReq: (proxyReq, req: any) => {
+      if (req.body && Object.keys(req.body).length) {
+        const bodyData = JSON.stringify(req.body);
+
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+
+      console.log('[GW] Forwarding AUTH:', req.url);
+    },
+
+    proxyRes: (proxyRes) => {
+      console.log('[GW] Identity response:', proxyRes.statusCode);
+    },
+
     error: (err: any, req: any, res: any) => {
-      console.error('❌ Identity proxy failed:', err.message);
+      console.error('[GW] Identity error:', err.message);
 
       if (res && typeof res.writeHead === 'function') {
         res.writeHead(503, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           error: 'Identity service unavailable',
+          detail: err.message
         }));
       }
     }
@@ -130,7 +156,6 @@ app.use('/auth', createProxyMiddleware({
 // ─────────────────────────────────────────
 for (const [path, target] of Object.entries(ROUTES)) {
 
-  // Skip if env missing (prevents crash)
   if (!target) {
     console.warn(`⚠️ Missing ENV for ${path}, skipping...`);
     continue;

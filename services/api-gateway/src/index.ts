@@ -76,52 +76,44 @@ function verifyJWT(req: any, res: Response, next: NextFunction) {
 }
 
 // ─────────────────────────────────────────
-// ✅ Service Resolver
+// ✅ ENV DEBUG (VERY IMPORTANT)
 // ─────────────────────────────────────────
-const svc = (envKey: string, defaultPort: number): string => {
-  const url = process.env[envKey];
-  if (url) return url;
-
-  const host = process.env.SERVICE_HOST ?? 'http://127.0.0.1';
-  return `${host}:${defaultPort}`;
-};
-
-// 🔥 Debug
-console.log("IDENTITY SERVICE URL:", svc('IDENTITY_SERVICE_URL', 4005));
+console.log("🔥 FINAL IDENTITY URL:", process.env.IDENTITY_SERVICE_URL);
 
 // ─────────────────────────────────────────
-// ✅ ROUTES (NO /identity HERE ❌)
+// ✅ ROUTES (NO /identity here ❌)
 // ─────────────────────────────────────────
 const ROUTES: Record<string, string> = {
-  '/erp':           svc('ERP_SERVICE_URL',       4001),
-  '/transport':     svc('TRANSPORT_SERVICE_URL', 4002),
-  '/tracking':      svc('TRACKING_SERVICE_URL',  4003),
-  '/ai':            svc('AI_SERVICE_URL',        8001),
-  '/finance':       svc('FINANCE_SERVICE_URL',   4006),
-  '/orders':        svc('ORDER_SERVICE_URL',     4007),
-  '/notifications': svc('NOTIFY_SERVICE_URL',    4008),
-  '/integrations':  svc('INTEGRATE_SERVICE_URL', 4009),
-  '/analytics':     svc('ANALYTICS_SERVICE_URL', 4010),
+  '/erp':           process.env.ERP_SERVICE_URL!,
+  '/transport':     process.env.TRANSPORT_SERVICE_URL!,
+  '/tracking':      process.env.TRACKING_SERVICE_URL!,
+  '/ai':            process.env.AI_SERVICE_URL!,
+  '/finance':       process.env.FINANCE_SERVICE_URL!,
+  '/orders':        process.env.ORDER_SERVICE_URL!,
+  '/notifications': process.env.NOTIFY_SERVICE_URL!,
+  '/integrations':  process.env.INTEGRATE_SERVICE_URL!,
+  '/analytics':     process.env.ANALYTICS_SERVICE_URL!,
 };
 
 // ─────────────────────────────────────────
-// ✅ AUTH ROUTE (ONLY THIS HANDLES LOGIN)
+// ✅ AUTH ROUTE (PUBLIC)
 // ─────────────────────────────────────────
 app.use('/auth', createProxyMiddleware({
-  target: svc('IDENTITY_SERVICE_URL', 4005),
+  target: process.env.IDENTITY_SERVICE_URL!,   // 🔥 FIXED
   changeOrigin: true,
+  xfwd: true,
 
   pathRewrite: {
     '^/auth': '',
   },
 
-  timeout: 15000,
-  proxyTimeout: 15000,
+  timeout: 20000,
+  proxyTimeout: 20000,
   secure: false,
 
   on: {
     error: (err: any, req: any, res: any) => {
-      console.error('[GW] Identity error:', err.message);
+      console.error('❌ Identity proxy failed:', err.message);
 
       if (res && typeof res.writeHead === 'function') {
         res.writeHead(503, { 'Content-Type': 'application/json' });
@@ -137,21 +129,29 @@ app.use('/auth', createProxyMiddleware({
 // ✅ PROTECTED ROUTES
 // ─────────────────────────────────────────
 for (const [path, target] of Object.entries(ROUTES)) {
+
+  // Skip if env missing (prevents crash)
+  if (!target) {
+    console.warn(`⚠️ Missing ENV for ${path}, skipping...`);
+    continue;
+  }
+
   app.use(path, verifyJWT, createProxyMiddleware({
     target,
     changeOrigin: true,
+    xfwd: true,
 
     pathRewrite: {
       [`^${path}`]: '',
     },
 
-    timeout: 15000,
-    proxyTimeout: 15000,
+    timeout: 20000,
+    proxyTimeout: 20000,
     secure: false,
 
     on: {
       error: (err: any, req: any, res: any) => {
-        console.error(`[GW] ${path} error:`, err.message);
+        console.error(`❌ ${path} proxy error:`, err.message);
 
         if (res && typeof res.writeHead === 'function') {
           res.writeHead(503, { 'Content-Type': 'application/json' });

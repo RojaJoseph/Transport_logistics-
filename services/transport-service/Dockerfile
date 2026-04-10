@@ -5,12 +5,14 @@ WORKDIR /app
 
 COPY package*.json ./
 
-# ✅ Install dependencies properly
-RUN npm install
+RUN npm install --force
 
 COPY . .
 
-# ✅ Ensure TypeScript is available
+# ✅ fix permission issue
+RUN chmod -R 755 /app/node_modules/.bin
+
+# ✅ compile
 RUN npx tsc
 
 # ---------- PRODUCTION STAGE ----------

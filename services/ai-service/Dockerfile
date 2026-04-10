@@ -1,28 +1,17 @@
-# ---------- BUILD STAGE ----------
-FROM node:20-alpine AS builder
+# ---------- BASE IMAGE ----------
+FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY package*.json ./
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN npm install --force
-
+# Copy app code
 COPY . .
 
-# ✅ fix permission issue
-RUN chmod -R 755 /app/node_modules/.bin
+# Expose port (Render default is 10000)
+ENV PORT=10000
 
-# ✅ compile
-RUN npx tsc
-
-# ---------- PRODUCTION STAGE ----------
-FROM node:20-alpine
-
-WORKDIR /app
-
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
-
-RUN npm install --omit=dev
-
-CMD ["node", "dist/index.js"]
+# Run app (adjust if using FastAPI / Flask)
+CMD ["python", "app/main.py"]

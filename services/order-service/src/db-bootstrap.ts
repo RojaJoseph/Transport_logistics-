@@ -5,13 +5,28 @@ export async function bootstrapDatabase(pool: Pool): Promise<void> {
 
   try {
     console.log('[db] Auto-bootstrap starting...');
+
+    // ✅ SAFE RESET (ONLY when explicitly enabled)
+    if (
+      process.env.RESET_DB === 'true' &&
+      process.env.ALLOW_DB_RESET === 'true'
+    ) {
+      console.log('[db] RESET_DB enabled — wiping schema...');
+      await client.query(`
+        DROP SCHEMA public CASCADE;
+        CREATE SCHEMA public;
+      `);
+    }
+
     await client.query('BEGIN');
 
-    // Extensions
+    // ✅ Extensions
     await client.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
     await client.query(`CREATE EXTENSION IF NOT EXISTS "pg_trgm"`);
 
-    // Tables
+    // =========================
+    // TENANTS
+    // =========================
     await client.query(`
       CREATE TABLE IF NOT EXISTS tenants (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -24,6 +39,9 @@ export async function bootstrapDatabase(pool: Pool): Promise<void> {
       );
     `);
 
+    // =========================
+    // USERS
+    // =========================
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -42,10 +60,13 @@ export async function bootstrapDatabase(pool: Pool): Promise<void> {
       );
     `);
 
+    // =========================
+    // INTEGRATIONS
+    // =========================
     await client.query(`
       CREATE TABLE IF NOT EXISTS integrations (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        tenant_id UUID NOT NULL REFERENCES tenants(id),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
         name VARCHAR(200) NOT NULL,
         type VARCHAR(100) NOT NULL,
         protocol VARCHAR(50) NOT NULL DEFAULT 'REST',
@@ -55,27 +76,34 @@ export async function bootstrapDatabase(pool: Pool): Promise<void> {
         error_msg TEXT,
         active BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (tenant_id, name)
       );
     `);
 
+    // =========================
+    // NOTIFICATION TEMPLATES
+    // =========================
     await client.query(`
       CREATE TABLE IF NOT EXISTS notification_templates (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        tenant_id UUID REFERENCES tenants(id),
-        code VARCHAR(100) NOT NULL UNIQUE,
+        tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+        code VARCHAR(100) NOT NULL,
         name VARCHAR(200) NOT NULL,
         channels TEXT[] NOT NULL DEFAULT '{}',
         subject_tpl TEXT,
         body_tpl TEXT NOT NULL,
         active BOOLEAN NOT NULL DEFAULT TRUE,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (tenant_id, code)
       );
     `);
 
     console.log('[db] Tables ready');
 
-    // Check seed
+    // =========================
+    // SEED CHECK
+    // =========================
     const { rows } = await client.query(
       `SELECT id FROM tenants WHERE slug='demo' LIMIT 1`
     );
@@ -86,28 +114,38 @@ export async function bootstrapDatabase(pool: Pool): Promise<void> {
       return;
     }
 
-    // Seed Data
-    const T = '00000000-0000-0000-0000-000000000001';
-    const A = '00000000-0000-0000-0000-000000000010';
+    console.log('[db] Seeding data...');
 
+    const TENANT_ID = '00000000-0000-0000-0000-000000000001';
+    const ADMIN_ID  = '00000000-0000-0000-0000-000000000010';
+
+    // =========================
+    // TENANT
+    // =========================
     await client.query(
       `INSERT INTO tenants(id,name,slug,plan)
        VALUES($1,'TransportOS Demo','demo','enterprise')
-       ON CONFLICT DO NOTHING`,
-      [T]
+       ON CONFLICT (slug) DO NOTHING`,
+      [TENANT_ID]
     );
 
+    // =========================
+    // ADMIN USER
+    // =========================
     await client.query(
       `INSERT INTO users(id,tenant_id,email,name,role,active)
        VALUES($1,$2,'admin@transportos.com','System Admin','SUPER_ADMIN',TRUE)
-       ON CONFLICT DO NOTHING`,
-      [A, T]
+       ON CONFLICT (id) DO NOTHING`,
+      [ADMIN_ID, TENANT_ID]
     );
 
+    // =========================
+    // NOTIFICATION TEMPLATES
+    // =========================
     const templates = [
-      ['SHIPMENT_DISPATCHED','Shipment Dispatched',['email','sms','push'],'Shipment {{shipment_id}} dispatched','Departed {{origin}}'],
-      ['DELAY_ALERT','Delay Alert',['email','sms'],'Delay {{shipment_id}}','SLA risk'],
-      ['INVOICE_GENERATED','Invoice Generated',['email'],'Invoice {{invoice_number}}','For {{amount}}']
+      ['SHIPMENT_DISPATCHED','Shipment Dispatched',['email','sms','push'],'Shipment {{shipment_id}} dispatched','Your shipment departed {{origin}}'],
+      ['DELAY_ALERT','Delay Alert',['email','sms'],'Delay {{shipment_id}}','Shipment at SLA risk'],
+      ['INVOICE_GENERATED','Invoice Generated',['email'],'Invoice {{invoice_number}}','Invoice for {{amount}}']
     ];
 
     for (const [code, name, channels, subject, body] of templates) {
@@ -115,8 +153,8 @@ export async function bootstrapDatabase(pool: Pool): Promise<void> {
         `INSERT INTO notification_templates
          (tenant_id,code,name,channels,subject_tpl,body_tpl,active)
          VALUES ($1,$2,$3,$4,$5,$6,TRUE)
-         ON CONFLICT DO NOTHING`,
-        [T, code, name, channels, subject, body]
+         ON CONFLICT (tenant_id, code) DO NOTHING`,
+        [TENANT_ID, code, name, channels, subject, body]
       );
     }
 

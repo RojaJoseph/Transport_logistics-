@@ -7,6 +7,18 @@ import { Pool } from 'pg';
 export async function bootstrapDatabase(pool: Pool): Promise<void> {
   console.log('[db] Running auto-bootstrap...');
 
+  // ✅ SAFE RESET (ONLY when explicitly enabled)
+  if (
+    process.env.RESET_DB === 'true' &&
+    process.env.ALLOW_DB_RESET === 'true'
+  ) {
+    console.log('[db] RESET_DB enabled — wiping schema...');
+    await pool.query(`
+      DROP SCHEMA public CASCADE;
+      CREATE SCHEMA public;
+    `);
+  }
+
   await pool.query(`
     CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
     CREATE EXTENSION IF NOT EXISTS "pg_trgm";
@@ -56,7 +68,7 @@ export async function bootstrapDatabase(pool: Pool): Promise<void> {
       body_tpl TEXT NOT NULL,
       active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      UNIQUE (tenant_id, code)  -- ✅ FIXED
+      UNIQUE (tenant_id, code)
     );
 
     -- =========================
@@ -77,7 +89,9 @@ export async function bootstrapDatabase(pool: Pool): Promise<void> {
   `);
 
   console.log('[db] Tables created (or already exist)');
+
   await seedData(pool);
+
   console.log('[db] Bootstrap complete ✓');
 }
 
@@ -96,9 +110,7 @@ async function seedData(pool: Pool): Promise<void> {
   const TENANT_ID = '00000000-0000-0000-0000-000000000001';
   const ADMIN_ID  = '00000000-0000-0000-0000-000000000010';
 
-  // =========================
-  // TENANT + ADMIN
-  // =========================
+  // Tenant
   await pool.query(
     `INSERT INTO tenants (id,name,slug,plan)
      VALUES ($1,'TransportOS Demo','demo','enterprise')
@@ -106,6 +118,7 @@ async function seedData(pool: Pool): Promise<void> {
     [TENANT_ID]
   );
 
+  // Admin
   await pool.query(
     `INSERT INTO users (id,tenant_id,email,name,role,active)
      VALUES ($1,$2,'admin@transportos.com','System Admin','SUPER_ADMIN',TRUE)
@@ -113,16 +126,14 @@ async function seedData(pool: Pool): Promise<void> {
     [ADMIN_ID, TENANT_ID]
   );
 
-  // =========================
-  // NOTIFICATION TEMPLATES
-  // =========================
+  // Notification templates
   const templates = [
-    ['SHIPMENT_DISPATCHED','Shipment Dispatched', ['email','sms','push'],           'Shipment {{shipment_id}} dispatched',           'Your shipment {{shipment_id}} departed {{origin}} at {{time}}. ETA: {{eta}}.'],
-    ['DELIVERY_COMPLETED', 'Delivery Completed',  ['email','push'],                 'Shipment {{shipment_id}} delivered',            'Shipment {{shipment_id}} delivered to {{destination}} at {{delivered_at}}.'],
-    ['DELAY_ALERT',        'Delay Alert',         ['email','sms','push','in-app'],  'Alert: Shipment {{shipment_id}} delayed',       'Shipment {{shipment_id}} is at SLA risk. ETA: {{eta}}. Reason: {{reason}}.'],
-    ['GEOFENCE_ALERT',     'Geofence Alert',      ['email','sms','push','in-app'],  'Geofence: Vehicle {{vehicle_id}} {{event}}',    'Vehicle {{vehicle_id}} {{event}} geofence "{{fence_name}}" at {{time}}.'],
-    ['INVOICE_GENERATED',  'Invoice Generated',   ['email'],                        'Invoice {{invoice_number}} — {{amount}}',       'Invoice {{invoice_number}} for {{amount}} ready. Due: {{due_date}}.'],
-    ['EXCEPTION_DETECTED', 'Exception Detected',  ['email','sms','push','in-app'],  'URGENT: Exception on {{shipment_id}}',          'Anomaly on {{shipment_id}}: {{description}}. Immediate action required.'],
+    ['SHIPMENT_DISPATCHED','Shipment Dispatched',['email','sms','push'],'Shipment {{shipment_id}} dispatched','Your shipment {{shipment_id}} departed {{origin}} at {{time}}. ETA: {{eta}}.'],
+    ['DELIVERY_COMPLETED','Delivery Completed',['email','push'],'Shipment {{shipment_id}} delivered','Shipment {{shipment_id}} delivered to {{destination}} at {{delivered_at}}.'],
+    ['DELAY_ALERT','Delay Alert',['email','sms','push','in-app'],'Alert: Shipment {{shipment_id}} delayed','Shipment {{shipment_id}} is at SLA risk. ETA: {{eta}}. Reason: {{reason}}.'],
+    ['GEOFENCE_ALERT','Geofence Alert',['email','sms','push','in-app'],'Geofence: Vehicle {{vehicle_id}} {{event}}','Vehicle {{vehicle_id}} {{event}} geofence "{{fence_name}}" at {{time}}.'],
+    ['INVOICE_GENERATED','Invoice Generated',['email'],'Invoice {{invoice_number}} — {{amount}}','Invoice {{invoice_number}} for {{amount}} ready. Due: {{due_date}}.'],
+    ['EXCEPTION_DETECTED','Exception Detected',['email','sms','push','in-app'],'URGENT: Exception on {{shipment_id}}','Anomaly on {{shipment_id}}: {{description}}. Immediate action required.'],
   ];
 
   for (const [code, name, channels, subject, body] of templates) {

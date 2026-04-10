@@ -2,10 +2,22 @@ import { Pool } from 'pg';
 
 /**
  * AUTO DB BOOTSTRAP
- * Safe for production (idempotent + stable)
+ * Safe for production (idempotent + optional safe reset)
  */
 export async function bootstrapDatabase(pool: Pool): Promise<void> {
   console.log('[db] Running auto-bootstrap...');
+
+  // ✅ SAFE RESET (only if explicitly enabled)
+  if (
+    process.env.RESET_DB === 'true' &&
+    process.env.ALLOW_DB_RESET === 'true'
+  ) {
+    console.log('[db] RESET_DB enabled — wiping schema...');
+    await pool.query(`
+      DROP SCHEMA public CASCADE;
+      CREATE SCHEMA public;
+    `);
+  }
 
   await pool.query(`
     CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -41,6 +53,24 @@ export async function bootstrapDatabase(pool: Pool): Promise<void> {
       UNIQUE (tenant_id, email)
     );
 
+    CREATE TABLE IF NOT EXISTS user_permissions (
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      permission VARCHAR(100) NOT NULL,
+      PRIMARY KEY (user_id, permission)
+    );
+
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      tenant_id UUID REFERENCES tenants(id),
+      user_id UUID REFERENCES users(id),
+      user_name VARCHAR(200),
+      action VARCHAR(100) NOT NULL,
+      detail TEXT,
+      ip_address INET,
+      risk_level VARCHAR(20) NOT NULL DEFAULT 'low',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     -- =========================
     -- INTEGRATIONS
     -- =========================
@@ -58,7 +88,7 @@ export async function bootstrapDatabase(pool: Pool): Promise<void> {
       active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      UNIQUE (tenant_id, name)  -- ✅ important for ON CONFLICT
+      UNIQUE (tenant_id, name)
     );
 
     CREATE TABLE IF NOT EXISTS integration_events (
@@ -95,10 +125,7 @@ async function seedData(pool: Pool): Promise<void> {
   const TENANT_ID = '00000000-0000-0000-0000-000000000001';
   const ADMIN_ID  = '00000000-0000-0000-0000-000000000010';
 
-  // =========================
-  // TENANT + ADMIN
-  // =========================
-
+  // Tenant
   await pool.query(
     `INSERT INTO tenants (id, name, slug, plan)
      VALUES ($1, 'TransportOS Demo', 'demo', 'enterprise')
@@ -106,6 +133,7 @@ async function seedData(pool: Pool): Promise<void> {
     [TENANT_ID]
   );
 
+  // Admin
   await pool.query(
     `INSERT INTO users (id, tenant_id, email, name, role, active)
      VALUES ($1, $2, 'admin@transportos.com', 'System Admin', 'SUPER_ADMIN', TRUE)
@@ -113,19 +141,16 @@ async function seedData(pool: Pool): Promise<void> {
     [ADMIN_ID, TENANT_ID]
   );
 
-  // =========================
-  // INTEGRATIONS
-  // =========================
-
+  // Integrations
   const integrations = [
-    ['SAP S/4HANA',        'ERP',        'RFC/BAPI'],
-    ['BlueDart API',       'Carrier',    'REST'],
-    ['DTDC EDI',           'EDI',        'X12/EDIFACT'],
-    ['Stripe Billing',     'Finance',    'REST'],
-    ['Delhivery',          'Carrier',    'REST'],
-    ['FedEx Web Services', 'Carrier',    'SOAP'],
-    ['Customs ICEGate',    'Government', 'REST'],
-    ['Google Maps API',    'Maps',       'REST'],
+    ['SAP S/4HANA', 'ERP', 'RFC/BAPI'],
+    ['BlueDart API', 'Carrier', 'REST'],
+    ['DTDC EDI', 'EDI', 'X12/EDIFACT'],
+    ['Stripe Billing', 'Finance', 'REST'],
+    ['Delhivery', 'Carrier', 'REST'],
+    ['FedEx Web Services', 'Carrier', 'SOAP'],
+    ['Customs ICEGate', 'Government', 'REST'],
+    ['Google Maps API', 'Maps', 'REST'],
   ];
 
   for (const [name, type, protocol] of integrations) {

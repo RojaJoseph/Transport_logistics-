@@ -1,232 +1,276 @@
 # ================================================================
-# TransportOS — Render Blueprint (FIXED VERSION)
-# Uses EXISTING PostgreSQL instead of creating new one
+# TransportOS — Render.com Deployment
+# Deploy everything: push to GitHub → connect to Render → done.
+# All databases are auto-created by the services on first boot.
 # ================================================================
 
 services:
-  # ── Redis ─────────────────────────────────────────────────────
+  # ── PostgreSQL (Render managed DB) ────────────────────────────
+  - type: pserv
+    name: transportos-postgres
+    plan: free
+    env: docker
+    image:
+      url: docker.io/library/postgres:16-alpine
+    envVars:
+      - key: POSTGRES_DB
+        value: logistics
+      - key: POSTGRES_USER
+        value: logistics
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+
+  # ── Redis (Render managed Redis) ──────────────────────────────
   - type: redis
     name: transportos-redis
     plan: free
     ipAllowList: []
 
-  # ══════════════════════════════════════════════════════════════
-  # 1. IDENTITY SERVICE
-  # ══════════════════════════════════════════════════════════════
+  # ── Identity Service ──────────────────────────────────────────
   - type: web
-    name: transportos-identity-service
-    runtime: node
-    rootDir: services/identity-service
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    name: transportos-identity
     plan: free
-    healthCheckPath: /health
+    rootDir: services/identity-service
+    env: docker
+    dockerfilePath: ./Dockerfile
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: DATABASE_URL
-        sync: false   # 🔥 SET MANUALLY
+        fromService:
+          name: transportos-postgres
+          type: pserv
+          property: connectionString
       - key: JWT_SECRET
-        sync: false
+        generateValue: true
       - key: JWT_EXPIRES
         value: 8h
-
-  # ══════════════════════════════════════════════════════════════
-  # 2. API GATEWAY
-  # ══════════════════════════════════════════════════════════════
-  - type: web
-    name: transportos-api-gateway
-    runtime: node
-    rootDir: services/api-gateway
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    plan: free
-    healthCheckPath: /health
-    envVars:
       - key: NODE_ENV
         value: production
-      - key: JWT_SECRET
-        sync: false
-      - key: ALLOWED_ORIGINS
-        sync: false
-      - key: SERVICE_IDENTITY
-        sync: false
-      - key: SERVICE_ERP
-        sync: false
-      - key: SERVICE_TRANSPORT
-        sync: false
-      - key: SERVICE_TRACKING
-        sync: false
-      - key: SERVICE_AI
-        sync: false
-      - key: SERVICE_FINANCE
-        sync: false
-      - key: SERVICE_ORDERS
-        sync: false
-      - key: SERVICE_NOTIFY
-        sync: false
-      - key: SERVICE_INTEGRATE
-        sync: false
-      - key: SERVICE_ANALYTICS
-        sync: false
 
-  # ══════════════════════════════════════════════════════════════
-  # 3. ERP SERVICE
-  # ══════════════════════════════════════════════════════════════
+  # ── ERP Service ───────────────────────────────────────────────
   - type: web
-    name: transportos-erp-service
-    runtime: node
+    name: transportos-erp
+    plan: free
     rootDir: services/erp-service
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    plan: free
-    healthCheckPath: /health
+    env: docker
+    dockerfilePath: ./Dockerfile
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: DATABASE_URL
-        sync: false
+        fromService:
+          name: transportos-postgres
+          type: pserv
+          property: connectionString
       - key: REDIS_URL
         fromService:
-          type: redis
           name: transportos-redis
+          type: redis
           property: connectionString
+      - key: NODE_ENV
+        value: production
 
-  # ══════════════════════════════════════════════════════════════
-  # 4. TRANSPORT SERVICE
-  # ══════════════════════════════════════════════════════════════
+  # ── Transport Service ─────────────────────────────────────────
   - type: web
-    name: transportos-transport-service
-    runtime: node
+    name: transportos-transport
+    plan: free
     rootDir: services/transport-service
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    plan: free
-    healthCheckPath: /health
+    env: docker
+    dockerfilePath: ./Dockerfile
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: DATABASE_URL
-        sync: false
-
-  # ══════════════════════════════════════════════════════════════
-  # 5. TRACKING SERVICE
-  # ══════════════════════════════════════════════════════════════
-  - type: web
-    name: transportos-tracking-service
-    runtime: node
-    rootDir: services/tracking-service
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    plan: free
-    healthCheckPath: /health
-    envVars:
+        fromService:
+          name: transportos-postgres
+          type: pserv
+          property: connectionString
       - key: NODE_ENV
         value: production
-      - key: MONGO_URL
-        sync: false
+
+  # ── Order Service ─────────────────────────────────────────────
+  - type: web
+    name: transportos-orders
+    plan: free
+    rootDir: services/order-service
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          name: transportos-postgres
+          type: pserv
+          property: connectionString
       - key: REDIS_URL
         fromService:
-          type: redis
           name: transportos-redis
+          type: redis
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+
+  # ── Finance Service ───────────────────────────────────────────
+  - type: web
+    name: transportos-finance
+    plan: free
+    rootDir: services/finance-service
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          name: transportos-postgres
+          type: pserv
+          property: connectionString
+      - key: STRIPE_SECRET_KEY
+        value: ""
+      - key: NODE_ENV
+        value: production
+
+  # ── Notification Service ──────────────────────────────────────
+  - type: web
+    name: transportos-notify
+    plan: free
+    rootDir: services/notification-service
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          name: transportos-postgres
+          type: pserv
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: transportos-redis
+          type: redis
+          property: connectionString
+      - key: SENDGRID_API_KEY
+        value: ""
+      - key: TWILIO_ACCOUNT_SID
+        value: ""
+      - key: NODE_ENV
+        value: production
+
+  # ── Integration Service ───────────────────────────────────────
+  - type: web
+    name: transportos-integration
+    plan: free
+    rootDir: services/integration-service
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          name: transportos-postgres
+          type: pserv
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+
+  # ── AI Service ────────────────────────────────────────────────
+  - type: web
+    name: transportos-ai
+    plan: free
+    rootDir: services/ai-service
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          name: transportos-postgres
+          type: pserv
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        value: ""
+      - key: OPENAI_API_KEY
+        value: ""
+
+  # ── Analytics Service ─────────────────────────────────────────
+  - type: web
+    name: transportos-analytics
+    plan: free
+    rootDir: services/analytics-service
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          name: transportos-postgres
+          type: pserv
           property: connectionString
 
-  # ══════════════════════════════════════════════════════════════
-  # 6. ORDER SERVICE
-  # ══════════════════════════════════════════════════════════════
+  # ── API Gateway ───────────────────────────────────────────────
   - type: web
-    name: transportos-order-service
-    runtime: node
-    rootDir: services/order-service
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    name: transportos-gateway
     plan: free
-    healthCheckPath: /health
+    rootDir: services/api-gateway
+    env: docker
+    dockerfilePath: ./Dockerfile
     envVars:
+      - key: JWT_SECRET
+        fromService:
+          name: transportos-identity
+          type: web
+          envVarKey: JWT_SECRET
+      - key: IDENTITY_SERVICE_URL
+        fromService:
+          name: transportos-identity
+          type: web
+          property: host
+      - key: ERP_SERVICE_URL
+        fromService:
+          name: transportos-erp
+          type: web
+          property: host
+      - key: TRANSPORT_SERVICE_URL
+        fromService:
+          name: transportos-transport
+          type: web
+          property: host
+      - key: ORDER_SERVICE_URL
+        fromService:
+          name: transportos-orders
+          type: web
+          property: host
+      - key: FINANCE_SERVICE_URL
+        fromService:
+          name: transportos-finance
+          type: web
+          property: host
+      - key: NOTIFY_SERVICE_URL
+        fromService:
+          name: transportos-notify
+          type: web
+          property: host
+      - key: INTEGRATE_SERVICE_URL
+        fromService:
+          name: transportos-integration
+          type: web
+          property: host
+      - key: AI_SERVICE_URL
+        fromService:
+          name: transportos-ai
+          type: web
+          property: host
+      - key: ANALYTICS_SERVICE_URL
+        fromService:
+          name: transportos-analytics
+          type: web
+          property: host
       - key: NODE_ENV
         value: production
-      - key: DATABASE_URL
-        sync: false
 
-  # ══════════════════════════════════════════════════════════════
-  # 7. FINANCE SERVICE
-  # ══════════════════════════════════════════════════════════════
+  # ── Frontend ──────────────────────────────────────────────────
   - type: web
-    name: transportos-finance-service
-    runtime: node
-    rootDir: services/finance-service
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    name: transportos-frontend
     plan: free
-    healthCheckPath: /health
+    rootDir: frontend
+    env: docker
+    dockerfilePath: ./Dockerfile
     envVars:
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
-
-  # ══════════════════════════════════════════════════════════════
-  # 8. NOTIFICATION SERVICE
-  # ══════════════════════════════════════════════════════════════
-  - type: web
-    name: transportos-notification-service
-    runtime: node
-    rootDir: services/notification-service
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    plan: free
-    healthCheckPath: /health
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        sync: false
-
-  # ══════════════════════════════════════════════════════════════
-  # 9. INTEGRATION SERVICE
-  # ══════════════════════════════════════════════════════════════
-  - type: web
-    name: transportos-integration-service
-    runtime: node
-    rootDir: services/integration-service
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    plan: free
-    healthCheckPath: /health
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        sync: false
-
-  # ══════════════════════════════════════════════════════════════
-  # 10. ANALYTICS SERVICE
-  # ══════════════════════════════════════════════════════════════
-  - type: web
-    name: transportos-analytics-service
-    runtime: python
-    rootDir: services/analytics-service
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    plan: free
-    healthCheckPath: /health
-    envVars:
-      - key: DATABASE_URL
-        sync: false
-
-  # ══════════════════════════════════════════════════════════════
-  # 11. AI SERVICE
-  # ══════════════════════════════════════════════════════════════
-  - type: web
-    name: transportos-ai-service
-    runtime: python
-    rootDir: services/ai-service
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    plan: free
-    healthCheckPath: /health
-    envVars:
-      - key: DATABASE_URL
-        sync: false
+      - key: VITE_API_GATEWAY
+        fromService:
+          name: transportos-gateway
+          type: web
+          property: host
+      - key: VITE_WS_TRACKING
+        fromService:
+          name: transportos-tracking
+          type: web
+          property: host

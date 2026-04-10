@@ -5,32 +5,32 @@ WORKDIR /app
 
 COPY package*.json ./
 
+# Install dependencies (includes dev deps for build)
 RUN npm ci
-
-# Install TypeScript globally (fix)
-RUN npm install -g typescript
 
 COPY . .
 
+# Build-time env variables
 ARG VITE_API_GATEWAY=/api
 ARG VITE_WS_TRACKING=/socket.io
+
 ENV VITE_API_GATEWAY=$VITE_API_GATEWAY
 ENV VITE_WS_TRACKING=$VITE_WS_TRACKING
 
-RUN npx tsc && npx vite build
+# ✅ Only build (no need for tsc separately)
+RUN npm run build
 
 
 # ── Stage 2: Serve with Nginx ──────────────────────
 FROM nginx:1.27-alpine
 
-# Copy built app
+# Copy build output
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Render requires this port
+# Render uses 10000
 EXPOSE 10000
 
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]

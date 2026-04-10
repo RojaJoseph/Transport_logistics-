@@ -149,7 +149,7 @@ for (const [path, target] of Object.entries(ROUTES)) {
     secure: false,
 
     on: {
-      error: (err: any, req: Request, res: Response) => {
+      error: (err: any, req: Request, res:any)=>{
         console.error(`[GW] ${path} error:`, err.message);
         res.status(503).json({
           error: `Service ${path} unavailable`,

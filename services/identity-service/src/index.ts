@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import speakeasy from 'speakeasy';
 import { z } from 'zod';
-import { bootstrapDatabase } from '../../shared/db-bootstrap';
+import { bootstrapDatabase } from './db-bootstrap';
 
 const app = express();
 const pool = new Pool({ connectionString: process.env.DATABASE_URL!, ssl: process.env.DATABASE_URL?.includes('render.com') ? { rejectUnauthorized: false } : false });

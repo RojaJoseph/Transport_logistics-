@@ -8,9 +8,9 @@ import jwt from 'jsonwebtoken';
 
 const app = express();
 
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────
 // ✅ Middleware
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────
 app.use(helmet());
 
 app.use(cors({
@@ -24,9 +24,9 @@ app.use(rateLimit({ windowMs: 60_000, max: 2000 }));
 
 app.use(express.json({ limit: '10mb' }));
 
-// ─────────────────────────────────────────────────────
-// ✅ Logging Middleware
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────
+// ✅ Logging
+// ─────────────────────────────────────────
 app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
 
@@ -44,9 +44,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────
 // ✅ Health Check
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────
 app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
@@ -55,30 +55,30 @@ app.get('/health', (_req: Request, res: Response) => {
   });
 });
 
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────
 // ✅ JWT Middleware
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────
 const JWT_SECRET =
   process.env.JWT_SECRET ?? 'transportos_secret_change_in_production!!';
 
 function verifyJWT(req: any, res: Response, next: NextFunction) {
   const auth = req.headers.authorization;
 
-  if (!auth || !auth.startsWith('Bearer ')) {
+  if (!auth?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing Authorization header' });
   }
 
   try {
     req.user = jwt.verify(auth.slice(7), JWT_SECRET);
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 }
 
-// ─────────────────────────────────────────────────────
-// ✅ Service Resolver (Render + Local)
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────
+// ✅ Service Resolver
+// ─────────────────────────────────────────
 const svc = (envKey: string, defaultPort: number): string => {
   const url = process.env[envKey];
   if (url) return url;
@@ -87,12 +87,12 @@ const svc = (envKey: string, defaultPort: number): string => {
   return `${host}:${defaultPort}`;
 };
 
-// 🔥 Debug log (VERY IMPORTANT)
+// 🔥 IMPORTANT DEBUG
 console.log("IDENTITY SERVICE URL:", svc('IDENTITY_SERVICE_URL', 4005));
 
-// ─────────────────────────────────────────────────────
-// ✅ Service Routes
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────
+// ✅ ROUTES MAP
+// ─────────────────────────────────────────
 const ROUTES: Record<string, string> = {
   '/erp':           svc('ERP_SERVICE_URL',       4001),
   '/transport':     svc('TRANSPORT_SERVICE_URL', 4002),
@@ -106,14 +106,13 @@ const ROUTES: Record<string, string> = {
   '/analytics':     svc('ANALYTICS_SERVICE_URL', 4010),
 };
 
-// ─────────────────────────────────────────────────────
-// ✅ AUTH ROUTE (PUBLIC) 🔥 CRITICAL
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────
+// ✅ AUTH (PUBLIC)
+// ─────────────────────────────────────────
 app.use('/auth', createProxyMiddleware({
   target: svc('IDENTITY_SERVICE_URL', 4005),
   changeOrigin: true,
 
-  // Remove /auth prefix
   pathRewrite: {
     '^/auth': '',
   },
@@ -123,18 +122,21 @@ app.use('/auth', createProxyMiddleware({
   secure: false,
 
   on: {
-    error: (err: any, req: Request, res: Response) => {
-      console.error('[GW] Identity service error:', err.message);
-      res.status(503).json({
-        error: 'Identity service unavailable',
-      });
+    error: (err, req, res) => {
+      console.error('[GW] Identity error:', err.message);
+
+      // ⚠️ FIX: safe response handling
+      if ('writeHead' in res) {
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Identity service unavailable' }));
+      }
     }
   }
 }));
 
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────
 // ✅ PROTECTED ROUTES
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────
 for (const [path, target] of Object.entries(ROUTES)) {
   app.use(path, verifyJWT, createProxyMiddleware({
     target,
@@ -149,19 +151,23 @@ for (const [path, target] of Object.entries(ROUTES)) {
     secure: false,
 
     on: {
-      error: (err: any, req: Request, res:any)=>{
+      error: (err, req, res) => {
         console.error(`[GW] ${path} error:`, err.message);
-        res.status(503).json({
-          error: `Service ${path} unavailable`,
-        });
+
+        if ('writeHead' in res) {
+          res.writeHead(503, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            error: `Service ${path} unavailable`,
+          }));
+        }
       }
     }
   }));
 }
 
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────
 // ✅ START SERVER
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────
 const PORT = Number(process.env.PORT ?? 4000);
 
 app.listen(PORT, '0.0.0.0', () => {

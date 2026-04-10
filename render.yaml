@@ -155,36 +155,20 @@ services:
           name: transportos-identity
           type: web
           envVarKey: JWT_SECRET
+
       - key: IDENTITY_SERVICE_URL
-        fromService:
-          name: transportos-identity
-          type: web
-          property: url
+        value: https://transportos-identity.onrender.com
       - key: ERP_SERVICE_URL
-        fromService:
-          name: transportos-erp
-          type: web
-          property: url
+        value: https://transportos-erp.onrender.com
       - key: TRANSPORT_SERVICE_URL
-        fromService:
-          name: transportos-transport
-          type: web
-          property: url
+        value: https://transportos-transport.onrender.com
       - key: ORDER_SERVICE_URL
-        fromService:
-          name: transportos-orders
-          type: web
-          property: url
+        value: https://transportos-orders.onrender.com
       - key: FINANCE_SERVICE_URL
-        fromService:
-          name: transportos-finance
-          type: web
-          property: url
+        value: https://transportos-finance.onrender.com
       - key: NOTIFY_SERVICE_URL
-        fromService:
-          name: transportos-notify
-          type: web
-          property: url
+        value: https://transportos-notify.onrender.com
+
       - key: NODE_ENV
         value: production
 
@@ -197,7 +181,4 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: VITE_API_GATEWAY
-        fromService:
-          name: transportos-gateway
-          type: web
-          property: url
+        value: https://transportos-gateway.onrender.com

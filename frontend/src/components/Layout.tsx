@@ -4,14 +4,31 @@ import Topbar from './Topbar';
 
 export default function Layout() {
   return (
-    <div className="flex h-full" style={{ background: 'var(--color-bg)' }}>
+    <div style={{
+      display: 'flex',
+      height: '100vh',
+      overflow: 'hidden',
+      background: 'var(--bg-base)',
+    }}>
+      {/* Fixed-width sidebar */}
       <Sidebar />
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+
+      {/* Right column: topbar + scrollable content */}
+      <div style={{
+        flex: 1,
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}>
         <Topbar />
-        <main
-          className="flex-1 overflow-y-auto p-6"
-          style={{ background: 'var(--color-bg)' }}
-        >
+
+        {/* Page content */}
+        <main style={{
+          flex: 1,
+          overflow: 'hidden',       /* let each page control its own scroll */
+          position: 'relative',
+        }}>
           <Outlet />
         </main>
       </div>

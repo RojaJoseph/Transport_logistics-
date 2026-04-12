@@ -78,9 +78,9 @@ export default function AIModule() {
           {(['capabilities','insights','chat','optimise'] as const).map(t => (
             <button key={t} onClick={()=>setTab(t)} style={{
               padding:'7px 18px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer',
-              background:tab===t?'#ea580c':'rgba(255,255,255,0.04)',
-              border:`1px solid ${tab===t?'#ea580c50':'rgba(255,255,255,0.06)'}`,
-              color:tab===t?'#fff':'var(--text-muted)',
+              background:activeTab===t?'#ea580c':'rgba(255,255,255,0.04)',
+              border:`1px solid ${activeTab===t?'#ea580c50':'rgba(255,255,255,0.06)'}`,
+              color:activeTab===t?'#fff':'var(--text-muted)',
               transition:'all 0.15s', textTransform:'capitalize',
             }}>{t}</button>
           ))}

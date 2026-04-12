@@ -1,150 +1,219 @@
 import { useState } from 'react';
-import { Plug, CheckCircle, XCircle, RefreshCw, Zap, Globe, Database, Cloud } from 'lucide-react';
+import { Plug, CheckCircle, XCircle, RefreshCw, Plus, Zap, Clock } from 'lucide-react';
+import PageIntro from '@/components/PageIntro';
+import { ActionModal, FormInput, FormSelect, SubmitBtn } from '@/components/ActionModal';
 
 const INTEGRATIONS = [
-  { id: 'INT-001', name: 'SAP S/4HANA',       type: 'ERP',       protocol: 'RFC/BAPI', status: 'Connected', lastSync: '2 min ago',  icon: '🏢', color: '#00e5ff' },
-  { id: 'INT-002', name: 'project44',          type: 'Tracking',  protocol: 'REST',     status: 'Connected', lastSync: '30 sec ago', icon: '📍', color: '#16a34a' },
-  { id: 'INT-003', name: 'BlueDart API',        type: 'Carrier',   protocol: 'REST',     status: 'Connected', lastSync: '5 min ago',  icon: '✈️', color: '#2563eb' },
-  { id: 'INT-004', name: 'DTDC EDI',           type: 'EDI',       protocol: 'X12/EDIFACT',status:'Connected',lastSync: '1h ago',    icon: '📋', color: '#7c3aed' },
-  { id: 'INT-005', name: 'Stripe Billing',     type: 'Finance',   protocol: 'REST',     status: 'Connected', lastSync: '10 min ago', icon: '💳', color: '#ffab00' },
-  { id: 'INT-006', name: 'Delhivery',          type: 'Carrier',   protocol: 'REST',     status: 'Error',     lastSync: '2h ago',     icon: '🚚', color: '#ff1744' },
-  { id: 'INT-007', name: 'FedEx Web Services', type: 'Carrier',   protocol: 'SOAP',     status: 'Connected', lastSync: '15 min ago', icon: '📦', color: '#ff6b2b' },
-  { id: 'INT-008', name: 'Customs ICEGate',    type: 'Government',protocol: 'REST',     status: 'Connected', lastSync: '1h ago',     icon: '🏛️', color: '#059669' },
-  { id: 'INT-009', name: 'AWS S3 / SQS',       type: 'Cloud',     protocol: 'SDK',      status: 'Connected', lastSync: 'Live',       icon: '☁️', color: '#ff6b2b' },
-  { id: 'INT-010', name: 'Google Maps API',    type: 'Maps',      protocol: 'REST',     status: 'Connected', lastSync: 'Live',       icon: '🗺️', color: '#4285F4' },
-  { id: 'INT-011', name: 'WhatsApp Business', type: 'Messaging', protocol: 'REST',     status: 'Pending',   lastSync: '—',          icon: '💬', color: '#25D366' },
-  { id: 'INT-012', name: 'Oracle TMS',        type: 'TMS',       protocol: 'REST',     status: 'Pending',   lastSync: '—',          icon: '🔶', color: '#F80000' },
+  { id:'INT-001', name:'SAP S/4HANA',        type:'ERP',       protocol:'RFC/BAPI',    status:'Connected', sync:'2 min ago',  icon:'🏢', color:'#00d4ff' },
+  { id:'INT-002', name:'BlueDart API',        type:'Carrier',   protocol:'REST',        status:'Connected', sync:'5 min ago',  icon:'✈️', color:'#2563eb' },
+  { id:'INT-003', name:'DTDC EDI',            type:'EDI',       protocol:'X12/EDIFACT', status:'Connected', sync:'1h ago',     icon:'📋', color:'#7c3aed' },
+  { id:'INT-004', name:'Stripe Billing',      type:'Finance',   protocol:'REST',        status:'Connected', sync:'10 min ago', icon:'💳', color:'#f59e0b' },
+  { id:'INT-005', name:'Delhivery',           type:'Carrier',   protocol:'REST',        status:'Error',     sync:'2h ago',     icon:'🚚', color:'#ef4444' },
+  { id:'INT-006', name:'FedEx Web Services',  type:'Carrier',   protocol:'SOAP',        status:'Connected', sync:'15 min ago', icon:'📦', color:'#f97316' },
+  { id:'INT-007', name:'Customs ICEGate',     type:'Government',protocol:'REST',        status:'Connected', sync:'1h ago',     icon:'🏛️', color:'#10b981' },
+  { id:'INT-008', name:'Google Maps API',     type:'Maps',      protocol:'REST',        status:'Connected', sync:'Live',       icon:'🗺️', color:'#4285F4' },
+  { id:'INT-009', name:'AWS S3 / SQS',        type:'Cloud',     protocol:'SDK',         status:'Connected', sync:'Live',       icon:'☁️', color:'#f97316' },
+  { id:'INT-010', name:'WhatsApp Business',   type:'Messaging', protocol:'REST',        status:'Pending',   sync:'—',          icon:'💬', color:'#25D366' },
+  { id:'INT-011', name:'Oracle TMS',          type:'TMS',       protocol:'REST',        status:'Pending',   sync:'—',          icon:'🔶', color:'#F80000' },
+  { id:'INT-012', name:'Gati API',            type:'Carrier',   protocol:'REST',        status:'Connected', sync:'30 min ago', icon:'🛵', color:'#00d4ff' },
 ];
-
-const statusConfig: Record<string, { color: string; bg: string; icon: any }> = {
-  Connected: { color: '#00e676', bg: 'rgba(0,230,118,0.1)',  icon: CheckCircle },
-  Error:     { color: '#ff1744', bg: 'rgba(255,23,68,0.1)',  icon: XCircle },
-  Pending:   { color: '#ffab00', bg: 'rgba(255,171,0,0.1)', icon: RefreshCw },
-};
 
 const EVENT_LOG = [
-  { time: '14:32:10', integration: 'project44',    event: 'POSITION_UPDATE',  status: 'success', payload: '{"lat":19.07,"lng":72.87}' },
-  { time: '14:31:55', integration: 'SAP S/4HANA',  event: 'STOCK_SYNC',       status: 'success', payload: '{"sku":"SKU-00123","qty":4200}' },
-  { time: '14:30:22', integration: 'Delhivery',    event: 'WEBHOOK_RECEIVE',  status: 'error',   payload: '{"error":"Timeout 30s"}' },
-  { time: '14:29:11', integration: 'Stripe',       event: 'PAYMENT_CAPTURED', status: 'success', payload: '{"invoice":"INV-2025-0481"}' },
-  { time: '14:28:40', integration: 'BlueDart',     event: 'SHIPMENT_CREATE',  status: 'success', payload: '{"awb":"32891044201"}' },
+  { time:'14:32:10', name:'SAP S/4HANA',   event:'STOCK_SYNC',       status:'success', payload:'{"sku":"SKU-00123","qty":4200}' },
+  { time:'14:31:55', name:'BlueDart API',  event:'SHIPMENT_CREATE',  status:'success', payload:'{"awb":"328910442"}' },
+  { time:'14:30:22', name:'Delhivery',     event:'WEBHOOK_RECEIVE',  status:'error',   payload:'{"error":"Timeout 30s"}' },
+  { time:'14:29:11', name:'Stripe',        event:'PAYMENT_CAPTURED', status:'success', payload:'{"invoice":"INV-2025-0481"}' },
+  { time:'14:28:40', name:'BlueDart API',  event:'TRACK_SHIPMENT',   status:'success', payload:'{"awb":"328910442","status":"in_transit"}' },
 ];
 
+const stCfg: Record<string,{color:string;bg:string;icon:any}> = {
+  Connected: { color:'#10b981', bg:'rgba(16,185,129,0.1)', icon:CheckCircle },
+  Error:     { color:'#ef4444', bg:'rgba(239,68,68,0.1)',  icon:XCircle     },
+  Pending:   { color:'#f59e0b', bg:'rgba(245,158,11,0.1)', icon:RefreshCw   },
+};
+
 export default function IntegrationsModule() {
-  const [tab, setTab] = useState<'connectors'|'events'|'webhooks'>('connectors');
+  const [tab, setTab]   = useState<'connectors'|'events'|'webhooks'>('connectors');
   const [filter, setFilter] = useState('All');
+  const types = ['All', ...Array.from(new Set(INTEGRATIONS.map(i=>i.type)))];
+  const shown  = filter==='All' ? INTEGRATIONS : INTEGRATIONS.filter(i=>i.type===filter);
 
-  const types = ['All', ...Array.from(new Set(INTEGRATIONS.map(i => i.type)))];
-  const displayed = filter === 'All' ? INTEGRATIONS : INTEGRATIONS.filter(i => i.type === filter);
-
-  const connected = INTEGRATIONS.filter(i => i.status === 'Connected').length;
-  const errored   = INTEGRATIONS.filter(i => i.status === 'Error').length;
+  const connected = INTEGRATIONS.filter(i=>i.status==='Connected').length;
+  const errors    = INTEGRATIONS.filter(i=>i.status==='Error').length;
+  const pending   = INTEGRATIONS.filter(i=>i.status==='Pending').length;
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-bold">Integrations <span style={{ color: '#059669' }}>Connector Hub</span></h1>
-        <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>SAP · Carriers · EDI · Stripe · Maps · Cloud · Government APIs</p>
-      </div>
+    <div style={{ height:'100%', overflowY:'auto' }}>
+      <PageIntro
+        storageKey="integrations"
+        icon="🔌"
+        title="Integrations Hub"
+        subtitle="CONNECTOR ECOSYSTEM"
+        color="#059669"
+        description="Connect TransportOS to your entire logistics tech stack. SAP, carrier APIs, EDI partners, payment gateways, maps, cloud storage — all from one unified connector hub."
+        features={['SAP RFC/BAPI connector','Carrier REST/SOAP APIs','EDI X12 & EDIFACT','Stripe payment gateway','Google Maps & routing','AWS S3/SQS cloud storage','Webhook registry with HMAC','Real-time event log']}
+      />
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        {[
-          { label: 'Total Connectors', value: INTEGRATIONS.length.toString(), color: '#00e5ff' },
-          { label: 'Connected',        value: connected.toString(),            color: '#00e676' },
-          { label: 'Errors',           value: errored.toString(),              color: '#ff1744' },
-          { label: 'Events Today',     value: '48,291',                        color: '#7c3aed' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-xl p-4" style={{ background: 'var(--color-surface)', border: `1px solid rgba(${hexToRgb(color)},0.2)` }}>
-            <div className="text-xs tracking-widest mb-2" style={{ color: 'var(--color-text-muted)' }}>{label.toUpperCase()}</div>
-            <div className="text-2xl font-bold" style={{ color, fontFamily: 'var(--font-mono)' }}>{value}</div>
-          </div>
-        ))}
-      </div>
+      <div style={{ padding:'20px 20px 0', marginBottom:16 }}>
+        <h1 style={{ fontSize:20, fontWeight:800, fontFamily:'var(--font-display)', letterSpacing:'-0.02em', margin:'0 0 4px' }}>
+          Integrations <span style={{ color:'#059669' }}>Connector Hub</span>
+        </h1>
+        <p style={{ fontSize:11, color:'var(--text-muted)', margin:'0 0 16px', fontFamily:'var(--font-mono)' }}>
+          SAP · Carriers · EDI · Stripe · Maps · Cloud · Government APIs
+        </p>
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-5 p-1 rounded-xl w-fit" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-        {(['connectors','events','webhooks'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className="px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wide capitalize transition-all"
-            style={{ background: tab === t ? '#059669' : 'transparent', color: tab === t ? '#fff' : 'var(--color-text-muted)' }}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'connectors' && (
-        <>
-          {/* Type filter */}
-          <div className="flex gap-2 mb-4 flex-wrap">
-            {types.map(t => (
-              <button key={t} onClick={() => setFilter(t)}
-                className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
-                style={{ background: filter === t ? 'var(--color-accent-dim)' : 'var(--color-surface)', border: `1px solid ${filter === t ? 'var(--color-accent)' : 'var(--color-border)'}`, color: filter === t ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
-                {t}
-              </button>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            {displayed.map((int) => {
-              const { color: sc, bg, icon: SIcon } = statusConfig[int.status];
-              return (
-                <div key={int.id} className="rounded-xl p-4" style={{ background: 'var(--color-surface)', border: `1px solid rgba(${hexToRgb(int.color)},0.2)` }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{int.icon}</span>
-                      <div>
-                        <div className="text-xs font-bold">{int.name}</div>
-                        <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{int.type} · {int.protocol}</div>
-                      </div>
-                    </div>
-                    <div className="p-1 rounded" style={{ background: bg }}><SIcon size={12} style={{ color: sc }} /></div>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span style={{ color: sc, fontWeight: 600 }}>{int.status}</span>
-                    <span style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>Sync: {int.lastSync}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {tab === 'events' && (
-        <div className="space-y-2">
-          <div className="text-xs font-semibold tracking-widest mb-3" style={{ color: 'var(--color-text-muted)' }}>LIVE EVENT LOG</div>
-          {EVENT_LOG.map((e, i) => (
-            <div key={i} className="flex items-center gap-4 p-3 rounded-xl"
-              style={{ background: 'var(--color-surface)', border: `1px solid ${e.status === 'error' ? 'rgba(255,23,68,0.2)' : 'var(--color-border)'}` }}>
-              <span className="text-xs font-mono" style={{ color: 'var(--color-text-muted)', minWidth: 60 }}>{e.time}</span>
-              <span className="text-xs font-semibold" style={{ color: '#059669', minWidth: 120 }}>{e.integration}</span>
-              <span className="text-xs font-mono" style={{ color: 'var(--color-text-muted)', minWidth: 140 }}>{e.event}</span>
-              <span className="text-xs font-mono flex-1 truncate" style={{ color: 'var(--color-text-muted)' }}>{e.payload}</span>
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full`}
-                style={{ background: e.status === 'success' ? 'rgba(0,230,118,0.1)' : 'rgba(255,23,68,0.1)', color: e.status === 'success' ? '#00e676' : '#ff1744' }}>
-                {e.status}
-              </span>
+        {/* KPI row */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:20 }}>
+          {[
+            { label:'TOTAL',     value:String(INTEGRATIONS.length), color:'#00d4ff' },
+            { label:'CONNECTED', value:String(connected),            color:'#10b981' },
+            { label:'ERRORS',    value:String(errors),               color:'#ef4444' },
+            { label:'PENDING',   value:String(pending),              color:'#f59e0b' },
+          ].map(k => (
+            <div key={k.label} style={{ padding:'14px 16px', borderRadius:12, background:`${k.color}08`, border:`1px solid ${k.color}20` }}>
+              <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', color:'var(--text-muted)', fontFamily:'var(--font-mono)', marginBottom:6 }}>{k.label} CONNECTORS</div>
+              <div style={{ fontSize:24, fontWeight:800, color:k.color, fontFamily:'var(--font-mono)' }}>{k.value}</div>
             </div>
           ))}
         </div>
-      )}
 
-      {tab === 'webhooks' && (
-        <div className="rounded-xl p-8 text-center" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-          <Zap size={32} className="mx-auto mb-3" style={{ color: '#059669' }} />
-          <h2 className="font-bold text-lg mb-2">Webhook Manager</h2>
-          <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Configure inbound and outbound webhooks with retry, signature verification, and replay</p>
-          <button className="mt-4 px-5 py-2 rounded-xl text-sm font-bold" style={{ background: '#059669', color: '#fff' }}>Add Webhook</button>
+        {/* Tabs */}
+        <div style={{ display:'flex', gap:4, marginBottom:20 }}>
+          {(['connectors','events','webhooks'] as const).map(t => (
+            <button key={t} onClick={()=>setTab(t)} style={{
+              padding:'7px 18px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer',
+              background:tab===t?'#059669':'rgba(255,255,255,0.04)',
+              border:`1px solid ${tab===t?'#05996950':'rgba(255,255,255,0.06)'}`,
+              color:tab===t?'#fff':'var(--text-muted)',
+              transition:'all 0.15s', textTransform:'capitalize',
+            }}>{t.charAt(0).toUpperCase()+t.slice(1)}</button>
+          ))}
+          <ActionModal title="Add Connector" color="#059669" trigger={
+            <button className="btn btn-sm" style={{ marginLeft:'auto', background:'linear-gradient(135deg,#059669,#047857)', border:'none', color:'#fff', padding:'7px 16px', borderRadius:8, fontWeight:700, cursor:'pointer', fontSize:12, gap:6, display:'flex', alignItems:'center' }}>
+              <Plus size={13}/> Add Connector
+            </button>
+          }>
+            <FormInput label="Integration Name" placeholder="e.g. FedEx Ground API" value="" onChange={()=>{}} />
+            <FormSelect label="Type" options={['Carrier','ERP','EDI','Finance','Maps','Cloud','Government','TMS','Messaging']} value="Carrier" onChange={()=>{}} />
+            <FormSelect label="Protocol" options={['REST','SOAP','RFC/BAPI','SDK','X12/EDIFACT','GraphQL','gRPC']} value="REST" onChange={()=>{}} />
+            <FormInput label="API Base URL" placeholder="https://api.provider.com" value="" onChange={()=>{}} />
+            <FormInput label="API Key" placeholder="Your API key" value="" onChange={()=>{}} />
+            <SubmitBtn label="Add Connector" color="#059669" onClick={()=>{}} />
+          </ActionModal>
         </div>
-      )}
+
+        {/* Connectors grid */}
+        {tab === 'connectors' && (
+          <>
+            {/* Type filter */}
+            <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:16 }}>
+              {types.map(t => (
+                <button key={t} onClick={()=>setFilter(t)} style={{
+                  padding:'4px 12px', borderRadius:99, fontSize:11, fontWeight:600, cursor:'pointer',
+                  background:filter===t?'rgba(5,150,105,0.15)':'transparent',
+                  border:`1px solid ${filter===t?'rgba(5,150,105,0.4)':'rgba(255,255,255,0.08)'}`,
+                  color:filter===t?'#10b981':'var(--text-muted)',
+                  transition:'all 0.15s',
+                }}>{t}</button>
+              ))}
+            </div>
+
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
+              {shown.map(int => {
+                const cfg = stCfg[int.status];
+                const Icon = cfg.icon;
+                return (
+                  <ActionModal key={int.id} title={int.name} color={int.color} trigger={
+                    <div style={{
+                      padding:'16px', borderRadius:12, cursor:'pointer',
+                      background:'rgba(12,18,32,0.85)',
+                      border:`1px solid ${int.color}18`,
+                      transition:'all 0.18s',
+                    }}
+                      onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.borderColor=`${int.color}40`;(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';}}
+                      onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.borderColor=`${int.color}18`;(e.currentTarget as HTMLElement).style.transform='translateY(0)';}}>
+                      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
+                        <span style={{ fontSize:24 }}>{int.icon}</span>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{int.name}</div>
+                          <div style={{ fontSize:10, color:'var(--text-muted)' }}>{int.type} · {int.protocol}</div>
+                        </div>
+                        <div style={{ padding:'4px', borderRadius:6, background:cfg.bg }}>
+                          <Icon size={12} color={cfg.color} />
+                        </div>
+                      </div>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                        <span style={{ fontSize:11, fontWeight:600, color:cfg.color }}>{int.status}</span>
+                        <span style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'var(--font-mono)' }}>Sync: {int.sync}</span>
+                      </div>
+                    </div>
+                  }>
+                    <div style={{ display:'grid', gap:8, marginBottom:16 }}>
+                      {[['Status',int.status,cfg.color],['Type',int.type,'var(--text-primary)'],['Protocol',int.protocol,'#00d4ff'],['Last Sync',int.sync,'var(--text-muted)']].map(([k,v,c])=>(
+                        <div key={k} style={{ display:'flex', justifyContent:'space-between', padding:'8px 12px', borderRadius:8, background:'rgba(255,255,255,0.03)' }}>
+                          <span style={{ fontSize:11, color:'var(--text-muted)' }}>{k}</span>
+                          <span style={{ fontSize:11, fontWeight:700, color:String(c) }}>{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                      <SubmitBtn label="Test Connection" color={int.color} onClick={()=>{}} />
+                      <button style={{ padding:'11px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, color:'var(--text-secondary)', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                        View Logs
+                      </button>
+                    </div>
+                  </ActionModal>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Events log */}
+        {tab === 'events' && (
+          <div>
+            <div style={{ fontSize:10, fontWeight:700, letterSpacing:'0.1em', color:'var(--text-muted)', fontFamily:'var(--font-mono)', marginBottom:14 }}>LIVE EVENT LOG</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              {EVENT_LOG.map((e, i) => (
+                <div key={i} style={{
+                  display:'grid', gridTemplateColumns:'70px 140px 180px 1fr 80px',
+                  alignItems:'center', gap:12,
+                  padding:'12px 14px', borderRadius:10,
+                  background:'rgba(12,18,32,0.85)',
+                  border:`1px solid ${e.status==='error'?'rgba(239,68,68,0.2)':'rgba(255,255,255,0.05)'}`,
+                }}>
+                  <span style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'var(--text-muted)' }}>{e.time}</span>
+                  <span style={{ fontSize:12, fontWeight:700, color:'#059669', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{e.name}</span>
+                  <span style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'var(--text-muted)' }}>{e.event}</span>
+                  <span style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'rgba(0,212,255,0.7)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{e.payload}</span>
+                  <span style={{ padding:'3px 8px', borderRadius:99, fontSize:10, fontWeight:700, textAlign:'center', background:e.status==='success'?'rgba(16,185,129,0.1)':'rgba(239,68,68,0.1)', color:e.status==='success'?'#10b981':'#ef4444' }}>{e.status}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Webhooks */}
+        {tab === 'webhooks' && (
+          <div style={{ textAlign:'center', padding:'40px 20px' }}>
+            <Zap size={40} color="#059669" style={{ marginBottom:16 }} />
+            <h2 style={{ fontSize:18, fontWeight:700, marginBottom:8 }}>Webhook Manager</h2>
+            <p style={{ color:'var(--text-muted)', fontSize:13, marginBottom:20 }}>
+              Register inbound/outbound webhooks with HMAC-SHA256 signature verification, retry logic and event replay.
+            </p>
+            <ActionModal title="Register Webhook" color="#059669" trigger={
+              <button style={{ padding:'12px 24px', borderRadius:10, background:'linear-gradient(135deg,#059669,#047857)', border:'none', color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer' }}>
+                + Add Webhook
+              </button>
+            }>
+              <FormInput label="Endpoint URL" placeholder="https://your-server.com/webhook" value="" onChange={()=>{}} />
+              <FormSelect label="Events to Subscribe" options={['order.created','order.delivered','shipment.delayed','invoice.paid','geofence.alert','*  (all events)']} value="order.created" onChange={()=>{}} />
+              <FormInput label="Secret (auto-generated if blank)" placeholder="Leave blank for auto" value="" onChange={()=>{}} />
+              <SubmitBtn label="Register Webhook" color="#059669" onClick={()=>{}} />
+            </ActionModal>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
-
-function hexToRgb(hex: string): string {
-  const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!r) return '255,255,255';
-  return `${parseInt(r[1],16)}, ${parseInt(r[2],16)}, ${parseInt(r[3],16)}`;
 }

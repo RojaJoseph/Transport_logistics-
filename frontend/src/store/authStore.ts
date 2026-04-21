@@ -22,8 +22,8 @@ interface AuthState {
   hasPermission:   (perm: string) => boolean;
 }
 
-// Identity service runs on localhost:4005, gateway on localhost:4000
-// We call gateway /auth/login which proxies to identity-service
+// In dev: hits localhost:4000 via Vite proxy
+// In prod: VITE_API_GATEWAY is the Render gateway URL
 const GATEWAY = import.meta.env.VITE_API_GATEWAY ?? 'http://localhost:4000';
 
 export const useAuthStore = create<AuthState>()(
@@ -37,8 +37,11 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true });
         try {
-          const { data } = await axios.post(`${GATEWAY}/auth/login`, { email, password });
-          // Attach token to default axios headers
+          const { data } = await axios.post(
+            `${GATEWAY}/auth/login`,
+            { email, password },
+            { headers: { 'Content-Type': 'application/json' } }
+          );
           axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
           set({ user: data.user, token: data.token, isAuthenticated: true });
         } finally {

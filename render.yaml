@@ -1,28 +1,40 @@
+# =================================================================
+# TransportOS — Render.com Native Buildpack Deployment
+# NO DOCKER — Render auto-detects Node.js and Python natively.
+#
+# How to deploy:
+#   1. Push this whole repo to GitHub
+#   2. Go to render.com → New → Blueprint
+#   3. Connect your GitHub repo → Render reads this file
+#   4. All services deploy automatically
+#   5. DB tables + demo data created on first boot (auto-bootstrap)
+#
+# Login: admin@transportos.com / any password
+# =================================================================
+
+databases:
+  # ── Managed PostgreSQL ─────────────────────────────────────────
+  - name: transportos-db
+    plan: free
+    databaseName: logistics
+    user: logistics
+
 services:
 
-  # ── Redis ──────────────────────────────
-  - type: redis
-    name: transportos-redis
-    plan: free
-    ipAllowList: []
-
-  # ── Identity Service ───────────────────
+  # ── 1. Identity Service (Node.js) ─────────────────────────────
   - type: web
     name: transportos-identity
     plan: free
+    env: node
     rootDir: services/identity-service
-    env: docker
-    dockerfilePath: ./Dockerfile
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
-        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
-
-      # ✅ ADD THIS (ONLY HERE)
-      - key: RESET_DB
-        value: "true"
-      - key: ALLOW_DB_RESET
-        value: "true"
-
+        fromDatabase:
+          name: transportos-db
+          property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES
@@ -30,162 +42,257 @@ services:
       - key: NODE_ENV
         value: production
 
-  # ── ERP Service ────────────────────────
+  # ── 2. ERP Service (Node.js) ──────────────────────────────────
   - type: web
     name: transportos-erp
     plan: free
+    env: node
     rootDir: services/erp-service
-    env: docker
-    dockerfilePath: ./Dockerfile
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
-        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
-      - key: REDIS_URL
-        fromService:
-          name: transportos-redis
-          type: redis
+        fromDatabase:
+          name: transportos-db
           property: connectionString
       - key: NODE_ENV
         value: production
 
-  # ── Transport Service ──────────────────
+  # ── 3. Transport Service (Node.js) ────────────────────────────
   - type: web
     name: transportos-transport
     plan: free
+    env: node
     rootDir: services/transport-service
-    env: docker
-    dockerfilePath: ./Dockerfile
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
-        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
-      - key: NODE_ENV
-        value: production
-
-  # ── Orders Service ─────────────────────
-  - type: web
-    name: transportos-orders
-    plan: free
-    rootDir: services/order-service
-    env: docker
-    dockerfilePath: ./Dockerfile
-    envVars:
-      - key: DATABASE_URL
-        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
-      - key: REDIS_URL
-        fromService:
-          name: transportos-redis
-          type: redis
+        fromDatabase:
+          name: transportos-db
           property: connectionString
       - key: NODE_ENV
         value: production
 
-  # ── Finance Service ────────────────────
+  # ── 4. Tracking Service (Node.js) ─────────────────────────────
+  # Note: MongoDB and MQTT are optional — service runs in demo
+  # mode without them (simulated GPS data in the frontend).
+  - type: web
+    name: transportos-tracking
+    plan: free
+    env: node
+    rootDir: services/tracking-service
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: MONGO_URL
+        value: ""
+      - key: MQTT_URL
+        value: ""
+      - key: NODE_ENV
+        value: production
+
+  # ── 5. Order Service (Node.js) ────────────────────────────────
+  - type: web
+    name: transportos-orders
+    plan: free
+    env: node
+    rootDir: services/order-service
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: transportos-db
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+
+  # ── 6. Finance Service (Node.js) ──────────────────────────────
   - type: web
     name: transportos-finance
     plan: free
+    env: node
     rootDir: services/finance-service
-    env: docker
-    dockerfilePath: ./Dockerfile
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
-        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
+        fromDatabase:
+          name: transportos-db
+          property: connectionString
       - key: STRIPE_SECRET_KEY
         value: ""
       - key: NODE_ENV
         value: production
 
-  # ── Notification Service ───────────────
+  # ── 7. Notification Service (Node.js) ─────────────────────────
   - type: web
     name: transportos-notify
     plan: free
+    env: node
     rootDir: services/notification-service
-    env: docker
-    dockerfilePath: ./Dockerfile
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
-        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
-      - key: REDIS_URL
-        fromService:
-          name: transportos-redis
-          type: redis
+        fromDatabase:
+          name: transportos-db
+          property: connectionString
+      - key: SENDGRID_API_KEY
+        value: ""
+      - key: TWILIO_ACCOUNT_SID
+        value: ""
+      - key: TWILIO_AUTH_TOKEN
+        value: ""
+      - key: NODE_ENV
+        value: production
+
+  # ── 8. Integration Service (Node.js) ──────────────────────────
+  - type: web
+    name: transportos-integration
+    plan: free
+    env: node
+    rootDir: services/integration-service
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: transportos-db
           property: connectionString
       - key: NODE_ENV
         value: production
 
-  # ── Integration Service ────────────────
-  - type: web
-    name: transportos-integration
-    plan: free
-    rootDir: services/integration-service
-    env: docker
-    dockerfilePath: ./Dockerfile
-    envVars:
-      - key: DATABASE_URL
-        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
-      - key: NODE_ENV
-        value: production
-
-  # ── AI Service ─────────────────────────
-  - type: web
-    name: transportos-ai
-    plan: free
-    rootDir: services/ai-service
-    env: docker
-    dockerfilePath: ./Dockerfile
-    envVars:
-      - key: DATABASE_URL
-        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
-      - key: OPENAI_API_KEY
-        value: ""
-
-  # ── Analytics Service ──────────────────
+  # ── 9. Analytics Service (Python / FastAPI) ───────────────────
   - type: web
     name: transportos-analytics
     plan: free
+    env: python
     rootDir: services/analytics-service
-    env: docker
-    dockerfilePath: ./Dockerfile
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
-        value: postgresql://school_erp_db_adv0_user:USzsRpWChncFAgKyc4E9w3g0Siktg0JS@dpg-d752jvk50q8c739ratng-a.singapore-postgres.render.com/school_erp_db_adv0?ssl=true
+        fromDatabase:
+          name: transportos-db
+          property: connectionString
 
-  # ── API Gateway ───────────────────────
+  # ── 10. AI Service (Python / FastAPI) ─────────────────────────
+  - type: web
+    name: transportos-ai
+    plan: free
+    env: python
+    rootDir: services/ai-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: transportos-db
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        value: ""
+      - key: OPENAI_API_KEY
+        value: ""
+
+  # ── 11. API Gateway (Node.js) ─────────────────────────────────
+  # This is the single entry point — routes all /api/* traffic
   - type: web
     name: transportos-gateway
     plan: free
+    env: node
     rootDir: services/api-gateway
-    env: docker
-    dockerfilePath: ./Dockerfile
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
     envVars:
       - key: JWT_SECRET
         fromService:
           name: transportos-identity
           type: web
           envVarKey: JWT_SECRET
-
       - key: IDENTITY_SERVICE_URL
-        value: https://transportos-identity.onrender.com
+        fromService:
+          name: transportos-identity
+          type: web
+          property: host
       - key: ERP_SERVICE_URL
-        value: https://transportos-erp.onrender.com
+        fromService:
+          name: transportos-erp
+          type: web
+          property: host
       - key: TRANSPORT_SERVICE_URL
-        value: https://transportos-transport.onrender.com
+        fromService:
+          name: transportos-transport
+          type: web
+          property: host
+      - key: TRACKING_SERVICE_URL
+        fromService:
+          name: transportos-tracking
+          type: web
+          property: host
       - key: ORDER_SERVICE_URL
-        value: https://transportos-orders.onrender.com
+        fromService:
+          name: transportos-orders
+          type: web
+          property: host
       - key: FINANCE_SERVICE_URL
-        value: https://transportos-finance.onrender.com
+        fromService:
+          name: transportos-finance
+          type: web
+          property: host
       - key: NOTIFY_SERVICE_URL
-        value: https://transportos-notify.onrender.com
-
+        fromService:
+          name: transportos-notify
+          type: web
+          property: host
+      - key: INTEGRATE_SERVICE_URL
+        fromService:
+          name: transportos-integration
+          type: web
+          property: host
+      - key: AI_SERVICE_URL
+        fromService:
+          name: transportos-ai
+          type: web
+          property: host
+      - key: ANALYTICS_SERVICE_URL
+        fromService:
+          name: transportos-analytics
+          type: web
+          property: host
       - key: NODE_ENV
         value: production
 
-  # ── Frontend ───────────────────────────
+  # ── 12. Frontend (React + Vite → served with `serve`) ─────────
   - type: web
     name: transportos-frontend
     plan: free
+    env: node
     rootDir: frontend
-    env: docker
-    dockerfilePath: ./Dockerfile
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /
     envVars:
       - key: VITE_API_GATEWAY
-        value: https://transportos-gateway.onrender.com
+        fromService:
+          name: transportos-gateway
+          type: web
+          property: host
+      - key: VITE_WS_TRACKING
+        fromService:
+          name: transportos-tracking
+          type: web
+          property: host
+      - key: NODE_ENV
+        value: production

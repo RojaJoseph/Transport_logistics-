@@ -32,7 +32,6 @@ x-node-env: &node-env
   JWT_EXPIRES: ${JWT_EXPIRES:-8h}
   LOG_LEVEL: ${LOG_LEVEL:-info}
 
-
 # ════════════════════════════════════════════════════════════════════════════
 services:
 

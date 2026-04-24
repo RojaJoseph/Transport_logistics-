@@ -1,4 +1,0 @@
-# TransportOS — UI/UX upgrade complete
-# Push this to trigger Render redeploy
-
-echo "Changes pushed — Render will auto-redeploy in ~2 minutes"

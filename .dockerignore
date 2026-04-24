@@ -1,0 +1,34 @@
+# ── Dependencies ─────────────────────────────────────────
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/*.pyo
+
+# ── Build outputs ─────────────────────────────────────────
+**/dist
+**/.next
+**/build
+
+# ── Git / IDE ─────────────────────────────────────────────
+.git
+.gitignore
+**/.DS_Store
+**/*.swp
+
+# ── Docs & logs ───────────────────────────────────────────
+docs
+*.md
+*.log
+build-log.txt
+
+# ── Env files (passed at runtime, not baked into image) ───
+.env
+.env.*
+!.env.example
+
+# ── Terraform / K8s (infra only, not needed in app images) 
+infra/terraform
+infra/k8s
+
+# ── Scripts (dev tooling only) ────────────────────────────
+scripts

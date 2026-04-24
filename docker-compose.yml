@@ -1,27 +1,15 @@
-# ══════════════════════════════════════════════════════════════════════════════
-#  TransportOS — docker-compose.yml
-#  Production-ready Docker Compose for the full logistics platform
-#
-#  Usage:
-#    docker compose --env-file .env up --build -d
-#    docker compose logs -f
-#    docker compose down -v          # also removes volumes
-# ══════════════════════════════════════════════════════════════════════════════
-
 name: transportos
 
-# ── Shared healthcheck defaults ───────────────────────────────────────────────
+# ── Shared configs ───────────────────────────────────────────────
 x-healthcheck-defaults: &healthcheck-defaults
   interval: 30s
   timeout: 10s
   retries: 5
   start_period: 30s
 
-# ── Common restart policy ─────────────────────────────────────────────────────
 x-restart: &restart
   restart: unless-stopped
 
-# ── Node.js service shared env ────────────────────────────────────────────────
 x-node-env: &node-env
   NODE_ENV: production
   DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
@@ -32,10 +20,10 @@ x-node-env: &node-env
   JWT_EXPIRES: ${JWT_EXPIRES:-8h}
   LOG_LEVEL: ${LOG_LEVEL:-info}
 
-# ════════════════════════════════════════════════════════════════════════════
+# ────────────────────────────────────────────────────────────────
 services:
 
-  # ── ① Infrastructure ──────────────────────────────────────────────────────
+  # ── Infrastructure ────────────────────────────────────────────
 
   postgres:
     image: postgres:16-alpine
@@ -48,8 +36,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    networks:
-      - backend
+    networks: [backend]
     healthcheck:
       <<: *healthcheck-defaults
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
@@ -64,8 +51,7 @@ services:
       - mongo_data:/data/db
     ports:
       - "27017:27017"
-    networks:
-      - backend
+    networks: [backend]
     healthcheck:
       <<: *healthcheck-defaults
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
@@ -78,8 +64,7 @@ services:
       - redis_data:/data
     ports:
       - "6379:6379"
-    networks:
-      - backend
+    networks: [backend]
     healthcheck:
       <<: *healthcheck-defaults
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
@@ -92,317 +77,187 @@ services:
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
     ports:
-      - "1883:1883"   # MQTT
-      - "9001:9001"   # MQTT over WebSocket
-    networks:
-      - backend
+      - "1883:1883"
+      - "9001:9001"
+    networks: [backend]
     healthcheck:
       <<: *healthcheck-defaults
       test: ["CMD-SHELL", "mosquitto_pub -h localhost -t health -m ping || exit 1"]
 
-
-  # ── ② Backend Microservices ───────────────────────────────────────────────
+  # ── Backend Services ──────────────────────────────────────────
 
   identity-service:
-    build:
-      context: ./services/identity-service
-      dockerfile: Dockerfile
+    build: ./services/identity-service
     <<: *restart
     environment:
       <<: *node-env
       PORT: 4005
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - backend
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    networks: [backend]
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "wget -qO- http://localhost:4005/health || exit 1"]
+      test: ["CMD","node","-e","require('http').get('http://127.0.0.1:4005/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
 
   erp-service:
-    build:
-      context: ./services/erp-service
-      dockerfile: Dockerfile
+    build: ./services/erp-service
     <<: *restart
     environment:
       <<: *node-env
       PORT: 4001
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      identity-service:
-        condition: service_healthy
-    networks:
-      - backend
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      identity-service: { condition: service_healthy }
+    networks: [backend]
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "wget -qO- http://localhost:4001/health || exit 1"]
+      test: ["CMD","node","-e","require('http').get('http://127.0.0.1:4001/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
 
   transport-service:
-    build:
-      context: ./services/transport-service
-      dockerfile: Dockerfile
+    build: ./services/transport-service
     <<: *restart
     environment:
       <<: *node-env
       PORT: 4002
     depends_on:
-      postgres:
-        condition: service_healthy
-      identity-service:
-        condition: service_healthy
-    networks:
-      - backend
+      postgres: { condition: service_healthy }
+      identity-service: { condition: service_healthy }
+    networks: [backend]
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "wget -qO- http://localhost:4002/health || exit 1"]
+      test: ["CMD","node","-e","require('http').get('http://127.0.0.1:4002/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
 
   tracking-service:
-    build:
-      context: ./services/tracking-service
-      dockerfile: Dockerfile
+    build: ./services/tracking-service
     <<: *restart
     environment:
       <<: *node-env
       PORT: 4003
     depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      mosquitto:
-        condition: service_healthy
-      identity-service:
-        condition: service_healthy
-    networks:
-      - backend
+      mongodb: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      mosquitto: { condition: service_healthy }
+      identity-service: { condition: service_healthy }
+    networks: [backend]
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "wget -qO- http://localhost:4003/health || exit 1"]
+      test: ["CMD","node","-e","require('http').get('http://127.0.0.1:4003/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
 
   order-service:
-    build:
-      context: ./services/order-service
-      dockerfile: Dockerfile
+    build: ./services/order-service
     <<: *restart
     environment:
       <<: *node-env
       PORT: 4007
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      identity-service:
-        condition: service_healthy
-    networks:
-      - backend
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      identity-service: { condition: service_healthy }
+    networks: [backend]
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "wget -qO- http://localhost:4007/health || exit 1"]
+      test: ["CMD","node","-e","require('http').get('http://127.0.0.1:4007/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
 
   finance-service:
-    build:
-      context: ./services/finance-service
-      dockerfile: Dockerfile
+    build: ./services/finance-service
     <<: *restart
     environment:
       <<: *node-env
       PORT: 4006
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     depends_on:
-      postgres:
-        condition: service_healthy
-      identity-service:
-        condition: service_healthy
-    networks:
-      - backend
+      postgres: { condition: service_healthy }
+      identity-service: { condition: service_healthy }
+    networks: [backend]
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "wget -qO- http://localhost:4006/health || exit 1"]
+      test: ["CMD","node","-e","require('http').get('http://127.0.0.1:4006/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
 
   notification-service:
-    build:
-      context: ./services/notification-service
-      dockerfile: Dockerfile
+    build: ./services/notification-service
     <<: *restart
     environment:
       <<: *node-env
       PORT: 4008
-      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
-      SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL:-noreply@transportos.com}
-      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
-      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
-      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-}
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - backend
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    networks: [backend]
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "wget -qO- http://localhost:4008/health || exit 1"]
+      test: ["CMD","node","-e","require('http').get('http://127.0.0.1:4008/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
 
   integration-service:
-    build:
-      context: ./services/integration-service
-      dockerfile: Dockerfile
+    build: ./services/integration-service
     <<: *restart
     environment:
       <<: *node-env
       PORT: 4009
     depends_on:
-      postgres:
-        condition: service_healthy
-      identity-service:
-        condition: service_healthy
-    networks:
-      - backend
+      postgres: { condition: service_healthy }
+      identity-service: { condition: service_healthy }
+    networks: [backend]
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "wget -qO- http://localhost:4009/health || exit 1"]
+      test: ["CMD","node","-e","require('http').get('http://127.0.0.1:4009/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
 
   analytics-service:
-    build:
-      context: ./services/analytics-service
-      dockerfile: Dockerfile
+    build: ./services/analytics-service
     <<: *restart
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       PORT: 4010
-      NODE_ENV: production
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - backend
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:4010/health')\" || exit 1"]
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    networks: [backend]
 
   ai-service:
-    build:
-      context: ./services/ai-service
-      dockerfile: Dockerfile
+    build: ./services/ai-service
     <<: *restart
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      JWT_SECRET: ${JWT_SECRET}
       PORT: 8001
-      NODE_ENV: production
     depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - backend
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/health')\" || exit 1"]
+      postgres: { condition: service_healthy }
+    networks: [backend]
 
   api-gateway:
-    build:
-      context: ./services/api-gateway
-      dockerfile: Dockerfile
+    build: ./services/api-gateway
     <<: *restart
     environment:
       <<: *node-env
       PORT: 4000
-      # Internal service URLs — gateway proxies to these
-      IDENTITY_SERVICE_URL:     http://identity-service:4005
-      ERP_SERVICE_URL:          http://erp-service:4001
-      TRANSPORT_SERVICE_URL:    http://transport-service:4002
-      TRACKING_SERVICE_URL:     http://tracking-service:4003
-      ORDER_SERVICE_URL:        http://order-service:4007
-      FINANCE_SERVICE_URL:      http://finance-service:4006
-      NOTIFICATION_SERVICE_URL: http://notification-service:4008
-      INTEGRATION_SERVICE_URL:  http://integration-service:4009
-      ANALYTICS_SERVICE_URL:    http://analytics-service:4010
-      AI_SERVICE_URL:           http://ai-service:8001
+      IDENTITY_SERVICE_URL: http://identity-service:4005
     ports:
       - "4000:4000"
     depends_on:
-      identity-service:
-        condition: service_healthy
-      erp-service:
-        condition: service_healthy
-      transport-service:
-        condition: service_healthy
-      tracking-service:
-        condition: service_healthy
-      order-service:
-        condition: service_healthy
-      finance-service:
-        condition: service_healthy
-      notification-service:
-        condition: service_healthy
-      integration-service:
-        condition: service_healthy
-      analytics-service:
-        condition: service_healthy
-      ai-service:
-        condition: service_healthy
-    networks:
-      - backend
-      - frontend
+      identity-service: { condition: service_healthy }
+    networks: [backend, frontend]
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/health || exit 1"]
-
-
-  # ── ③ Frontend ────────────────────────────────────────────────────────────
+      test: ["CMD","node","-e","require('http').get('http://127.0.0.1:4000/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_GATEWAY: http://localhost:4000
-        VITE_WS_TRACKING: http://localhost:4003
+    build: ./frontend
     <<: *restart
     ports:
       - "80:80"
     depends_on:
-      api-gateway:
-        condition: service_healthy
-    networks:
-      - frontend
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "wget -qO- http://localhost:80 || exit 1"]
+      api-gateway: { condition: service_healthy }
+    networks: [frontend]
 
-
-# ════════════════════════════════════════════════════════════════════════════
+# ────────────────────────────────────────────────────────────────
 networks:
   backend:
-    driver: bridge
-    name: transportos_backend
   frontend:
-    driver: bridge
-    name: transportos_frontend
-
 
 volumes:
   postgres_data:
-    name: transportos_postgres_data
   mongo_data:
-    name: transportos_mongo_data
   redis_data:
-    name: transportos_redis_data
   mosquitto_data:
-    name: transportos_mosquitto_data
   mosquitto_log:
-    name: transportos_mosquitto_log

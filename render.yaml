@@ -34,7 +34,7 @@ databases:
     databaseName: logistics
     user: logistics
     plan: starter        # upgrade to standard for production workloads
-    region: oregon       # change to match your preferred region
+    region: singapure       # change to match your preferred region
 
 
 # ── All Services ──────────────────────────────────────────────────────────────
@@ -45,7 +45,7 @@ services:
   - type: redis
     name: transportos-redis
     plan: starter
-    region: oregon
+    region: singapore
     ipAllowList: []      # empty = internal access only (most secure)
 
 
@@ -57,7 +57,7 @@ services:
     dockerfilePath: ./infra/mosquitto/Dockerfile
     dockerContext: ./infra/mosquitto
     plan: starter
-    region: oregon
+    region: singapore
     # No env vars needed — config is baked into the Docker image
 
 
@@ -72,7 +72,7 @@ services:
     dockerfilePath: ./services/identity-service/Dockerfile
     dockerContext: ./services/identity-service
     plan: starter
-    region: oregon
+    region: singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -102,7 +102,7 @@ services:
     dockerfilePath: ./services/erp-service/Dockerfile
     dockerContext: ./services/erp-service
     plan: starter
-    region: oregon
+    region: singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -134,7 +134,7 @@ services:
     dockerfilePath: ./services/transport-service/Dockerfile
     dockerContext: ./services/transport-service
     plan: starter
-    region: oregon
+    region: singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -165,7 +165,7 @@ services:
     dockerfilePath: ./services/tracking-service/Dockerfile
     dockerContext: ./services/tracking-service
     plan: starter
-    region: oregon
+    region: singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -199,7 +199,7 @@ services:
     dockerfilePath: ./services/order-service/Dockerfile
     dockerContext: ./services/order-service
     plan: starter
-    region: oregon
+    region: singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -229,7 +229,7 @@ services:
     dockerfilePath: ./services/finance-service/Dockerfile
     dockerContext: ./services/finance-service
     plan: starter
-    region: oregon
+    region: singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -263,7 +263,7 @@ services:
     dockerfilePath: ./services/notification-service/Dockerfile
     dockerContext: ./services/notification-service
     plan: starter
-    region: oregon
+    region: singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -303,7 +303,7 @@ services:
     dockerfilePath: ./services/integration-service/Dockerfile
     dockerContext: ./services/integration-service
     plan: starter
-    region: oregon
+    region: singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -341,7 +341,7 @@ services:
     dockerfilePath: ./services/analytics-service/Dockerfile
     dockerContext: ./services/analytics-service
     plan: starter
-    region: oregon
+    region: singapore
     envVars:
       - key: DATABASE_URL
         sync: false          # ← paste postgresql+asyncpg://... in dashboard
@@ -361,7 +361,7 @@ services:
     dockerfilePath: ./services/ai-service/Dockerfile
     dockerContext: ./services/ai-service
     plan: starter
-    region: oregon
+    region: singapore
     envVars:
       - key: DATABASE_URL
         sync: false          # ← paste postgresql+asyncpg://... in dashboard
@@ -388,7 +388,7 @@ services:
     dockerfilePath: ./services/api-gateway/Dockerfile
     dockerContext: ./services/api-gateway
     plan: starter
-    region: oregon
+    region: singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -447,7 +447,7 @@ services:
     dockerfilePath: ./frontend/Dockerfile
     dockerContext: ./frontend
     plan: starter
-    region: oregon
+    region: singapore
 
     envVars:
     - key: PORT

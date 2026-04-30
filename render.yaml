@@ -448,10 +448,13 @@ services:
     dockerContext: ./frontend
     plan: starter
     region: oregon
-    buildArgs:
-      # ↓ Update these to your live gateway URL after first deploy
-      VITE_API_GATEWAY: https://transportos-gateway.onrender.com
-      VITE_WS_TRACKING: https://transportos-tracking.onrender.com
+
     envVars:
-      - key: PORT
-        value: 80
+    - key: PORT
+      value: "80"
+
+    - key: VITE_API_GATEWAY
+      value: "https://transportos-gateway.onrender.com"
+
+    - key: VITE_WS_TRACKING
+      value: "https://transportos-tracking.onrender.com"

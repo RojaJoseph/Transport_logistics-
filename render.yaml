@@ -1,29 +1,6 @@
 # =============================================================================
-#  TransportOS — Render Blueprint  (DEMO / FREE TIER)
-#
-#  ✅ No Redis   ✅ No MQTT/Mosquitto   ✅ Free-tier only
-#
-#  ONLY secrets you must set in the Render dashboard before deploying:
-#    JWT_SECRET   — copy from your .env file
-#    MONGO_URL    — free MongoDB Atlas cluster  (https://cloud.mongodb.com)
-#    ANALYTICS_DATABASE_URL — same as Postgres but use postgresql+asyncpg://
-#    AI_DATABASE_URL        — same as above
-#
-#  HOW TO DEPLOY:
-#    1. Push this file to GitHub (root of repo)
-#    2. Render Dashboard → Blueprints → New Blueprint → connect your repo
-#    3. Set the 4 secrets above in the dashboard
-#    4. After gateway deploys, copy its URL and update VITE_API_GATEWAY below,
-#       then redeploy the frontend
+# TransportOS — Render Blueprint (FREE DEMO — FIXED)
 # =============================================================================
-
-databases:
-  - name: transportos-postgres
-    databaseName: logistics
-    user: logistics
-    plan: free
-    region: Singapore
-
 
 services:
 
@@ -34,21 +11,16 @@ services:
     dockerfilePath: ./services/identity-service/Dockerfile
     dockerContext: ./services/identity-service
     plan: free
-    region: Singapore
+    region: singapore
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 4005
       - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
+        value: postgresql://transport_db_foed_user:ODh3lhfOQgVW2B7DY8hRz2R3IhHMUR8S@dpg-d7p40h28qa3s73eu1cj0-a.singapore-postgres.render.com/transport_db_foed
       - key: JWT_SECRET
         sync: false
-      - key: JWT_EXPIRES
-        value: 8h
-
 
   # ── ERP Service ─────────────────────────────────────────────────────────────
   - type: web
@@ -57,23 +29,16 @@ services:
     dockerfilePath: ./services/erp-service/Dockerfile
     dockerContext: ./services/erp-service
     plan: free
-    region: Singapore
+    region: singapore
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: PORT
         value: 4001
       - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
+        value: postgresql://transport_db_foed_user:ODh3lhfOQgVW2B7DY8hRz2R3IhHMUR8S@dpg-d7p40h28qa3s73eu1cj0-a.singapore-postgres.render.com/transport_db_foed
       - key: MONGO_URL
         sync: false
       - key: JWT_SECRET
         sync: false
-      - key: JWT_EXPIRES
-        value: 8h
-
 
   # ── Transport Service ───────────────────────────────────────────────────────
   - type: web
@@ -82,197 +47,90 @@ services:
     dockerfilePath: ./services/transport-service/Dockerfile
     dockerContext: ./services/transport-service
     plan: free
-    region: Singapore
+    region: singapore
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: PORT
         value: 4002
       - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
+        value: postgresql://transport_db_foed_user:ODh3lhfOQgVW2B7DY8hRz2R3IhHMUR8S@dpg-d7p40h28qa3s73eu1cj0-a.singapore-postgres.render.com/transport_db_foed
       - key: JWT_SECRET
         sync: false
-      - key: JWT_EXPIRES
-        value: 8h
-
 
   # ── Tracking Service ────────────────────────────────────────────────────────
-  #    MQTT removed — GPS live-tracking features won't stream in demo mode,
-  #    but the service will start and REST endpoints remain functional.
   - type: web
     name: transportos-tracking
     runtime: docker
     dockerfilePath: ./services/tracking-service/Dockerfile
     dockerContext: ./services/tracking-service
     plan: free
-    region: Singapore
+    region: singapore
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: PORT
         value: 4003
       - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
+        value: postgresql://transport_db_foed_user:ODh3lhfOQgVW2B7DY8hRz2R3IhHMUR8S@dpg-d7p40h28qa3s73eu1cj0-a.singapore-postgres.render.com/transport_db_foed
       - key: MONGO_URL
         sync: false
       - key: JWT_SECRET
         sync: false
-      - key: JWT_EXPIRES
-        value: 8h
 
-
-  # ── Order Service ───────────────────────────────────────────────────────────
+  # ── Orders ──────────────────────────────────────────────────────────────────
   - type: web
     name: transportos-orders
     runtime: docker
     dockerfilePath: ./services/order-service/Dockerfile
     dockerContext: ./services/order-service
     plan: free
-    region: Singapore
+    region: singapore
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: PORT
         value: 4007
       - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
+        value: postgresql://transport_db_foed_user:ODh3lhfOQgVW2B7DY8hRz2R3IhHMUR8S@dpg-d7p40h28qa3s73eu1cj0-a.singapore-postgres.render.com/transport_db_foed
       - key: JWT_SECRET
         sync: false
-      - key: JWT_EXPIRES
-        value: 8h
 
-
-  # ── Finance Service ─────────────────────────────────────────────────────────
-  - type: web
-    name: transportos-finance
-    runtime: docker
-    dockerfilePath: ./services/finance-service/Dockerfile
-    dockerContext: ./services/finance-service
-    plan: free
-    region: Singapore
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: PORT
-        value: 4006
-      - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
-      - key: JWT_SECRET
-        sync: false
-      - key: JWT_EXPIRES
-        value: 8h
-
-
-  # ── Notification Service ────────────────────────────────────────────────────
-  #    Email / SMS keys omitted — service runs in console-log demo mode.
-  - type: web
-    name: transportos-notify
-    runtime: docker
-    dockerfilePath: ./services/notification-service/Dockerfile
-    dockerContext: ./services/notification-service
-    plan: free
-    region: Singapore
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: PORT
-        value: 4008
-      - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
-      - key: JWT_SECRET
-        sync: false
-      - key: JWT_EXPIRES
-        value: 8h
-
-
-  # ── Integration Service ─────────────────────────────────────────────────────
-  - type: web
-    name: transportos-integration
-    runtime: docker
-    dockerfilePath: ./services/integration-service/Dockerfile
-    dockerContext: ./services/integration-service
-    plan: free
-    region: Singapore
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: PORT
-        value: 4009
-      - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
-      - key: JWT_SECRET
-        sync: false
-      - key: JWT_EXPIRES
-        value: 8h
-
-
-  # ── Analytics Service (Python / FastAPI) ────────────────────────────────────
-  #    Needs postgresql+asyncpg:// scheme — set ANALYTICS_DATABASE_URL manually.
-  #    Example: postgresql+asyncpg://logistics:<password>@<render-host>:5432/logistics
+  # ── Analytics (IMPORTANT async DB) ──────────────────────────────────────────
   - type: web
     name: transportos-analytics
     runtime: docker
     dockerfilePath: ./services/analytics-service/Dockerfile
     dockerContext: ./services/analytics-service
     plan: free
-    region: Singapore
+    region: singapore
     envVars:
       - key: DATABASE_URL
-        sync: false          # ← postgresql+asyncpg://... (set in dashboard)
+        value: postgresql+asyncpg://transport_db_foed_user:ODh3lhfOQgVW2B7DY8hRz2R3IhHMUR8S@dpg-d7p40h28qa3s73eu1cj0-a.singapore-postgres.render.com/transport_db_foed
       - key: PORT
         value: 4010
 
-
-  # ── AI Service (Python / FastAPI) ───────────────────────────────────────────
+  # ── AI Service ──────────────────────────────────────────────────────────────
   - type: web
     name: transportos-ai
     runtime: docker
     dockerfilePath: ./services/ai-service/Dockerfile
     dockerContext: ./services/ai-service
     plan: free
-    region: Singapore
+    region: singapore
     envVars:
       - key: DATABASE_URL
-        sync: false          # ← postgresql+asyncpg://... (set in dashboard)
+        value: postgresql+asyncpg://transport_db_foed_user:ODh3lhfOQgVW2B7DY8hRz2R3IhHMUR8S@dpg-d7p40h28qa3s73eu1cj0-a.singapore-postgres.render.com/transport_db_foed
       - key: PORT
         value: 8001
-      - key: ANTHROPIC_API_KEY
-        sync: false          # ← optional
-      - key: OPENAI_API_KEY
-        sync: false          # ← optional
 
-
-  # ── API Gateway — single public entry point ─────────────────────────────────
+  # ── Gateway ─────────────────────────────────────────────────────────────────
   - type: web
     name: transportos-gateway
     runtime: docker
     dockerfilePath: ./services/api-gateway/Dockerfile
     dockerContext: ./services/api-gateway
     plan: free
-    region: Singapore
+    region: singapore
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: PORT
         value: 4000
       - key: DATABASE_URL
-        fromDatabase:
-          name: transportos-postgres
-          property: connectionString
-      # Internal service URLs — use each service's Render public URL
-      # Render auto-assigns URLs in the format: https://<name>.onrender.com
+        value: postgresql://transport_db_foed_user:ODh3lhfOQgVW2B7DY8hRz2R3IhHMUR8S@dpg-d7p40h28qa3s73eu1cj0-a.singapore-postgres.render.com/transport_db_foed
       - key: IDENTITY_SERVICE_URL
         value: https://transportos-identity.onrender.com
       - key: ERP_SERVICE_URL
@@ -283,33 +141,21 @@ services:
         value: https://transportos-tracking.onrender.com
       - key: ORDER_SERVICE_URL
         value: https://transportos-orders.onrender.com
-      - key: FINANCE_SERVICE_URL
-        value: https://transportos-finance.onrender.com
-      - key: NOTIFY_SERVICE_URL
-        value: https://transportos-notify.onrender.com
-      - key: INTEGRATE_SERVICE_URL
-        value: https://transportos-integration.onrender.com
       - key: ANALYTICS_SERVICE_URL
         value: https://transportos-analytics.onrender.com
       - key: AI_SERVICE_URL
         value: https://transportos-ai.onrender.com
       - key: JWT_SECRET
         sync: false
-      - key: JWT_EXPIRES
-        value: 8h
 
-
-  # ── Frontend — React / Vite → Nginx ─────────────────────────────────────────
-  #    IMPORTANT: After your gateway deploys and you know its URL,
-  #    update VITE_API_GATEWAY to https://transportos-gateway.onrender.com
-  #    then redeploy this service so Vite bakes in the correct URL.
+  # ── Frontend ────────────────────────────────────────────────────────────────
   - type: web
     name: transportos-frontend
     runtime: docker
     dockerfilePath: ./frontend/Dockerfile
     dockerContext: ./frontend
     plan: free
-    region: oregon
+    region: singapore
     envVars:
       - key: PORT
         value: 80

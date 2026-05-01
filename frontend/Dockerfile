@@ -15,8 +15,8 @@ RUN npm ci --ignore-scripts
 COPY . .
 
 # Pass the API gateway URL at build time
-ARG VITE_API_GATEWAY=http://localhost:4000
-ARG VITE_WS_TRACKING=http://localhost:4003
+ARG VITE_API_GATEWAY=https://transportos-gateway.onrender.com
+ARG VITE_WS_TRACKING=https://transportos-tracking.onrender.com
 ENV VITE_API_GATEWAY=$VITE_API_GATEWAY
 ENV VITE_WS_TRACKING=$VITE_WS_TRACKING
 

@@ -14,8 +14,16 @@ export default function LoginPage() {
     setError('');
     try {
       await login(email, password);
-    } catch {
-      setError('Invalid credentials. Use any password to demo.');
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.error;
+      if (status === 401) {
+        setError('Invalid credentials. Try: admin@transportos.com with any password.');
+      } else if (status === 503 || !status) {
+        setError('Service is waking up (free tier). Please wait 30s and try again...');
+      } else {
+        setError(serverMsg ?? 'Login failed. Please try again.');
+      }
     }
   };
 
@@ -91,6 +99,10 @@ export default function LoginPage() {
               style={{ background: 'var(--color-accent)', color: '#000' }}>
               {isLoading ? 'Authenticating...' : 'Sign In →'}
             </button>
+
+            <p className="text-center text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+              Demo: <strong>admin@transportos.com</strong> · any password
+            </p>
           </div>
 
           <div className="mt-6 pt-6" style={{ borderTop: '1px solid var(--color-border)' }}>

@@ -233,14 +233,24 @@ async function seedData(pool: Pool): Promise<void> {
 
   await pool.query(
     `INSERT INTO tenants (id, name, slug)
-     VALUES ($1, 'TransportOS Demo', 'demo')`,
+     VALUES ($1, 'TransportOS Demo', 'demo')
+     ON CONFLICT DO NOTHING`,
     [TENANT_ID]
   );
 
   await pool.query(
     `INSERT INTO users (id, tenant_id, email, name, role)
-     VALUES ($1, $2, 'admin@transportos.com', 'System Admin', 'SUPER_ADMIN')`,
+     VALUES ($1, $2, 'admin@transportos.com', 'System Admin', 'SUPER_ADMIN')
+     ON CONFLICT DO NOTHING`,
     [ADMIN_ID, TENANT_ID]
+  );
+
+  // Ensure demo user always exists (idempotent safety net)
+  await pool.query(
+    `INSERT INTO users (tenant_id, email, name, role)
+     VALUES ($1, 'demo@transportos.com', 'Demo User', 'LOGISTICS_EXEC')
+     ON CONFLICT DO NOTHING`,
+    [TENANT_ID]
   );
 
   console.log('[db] ✓ Seed complete');

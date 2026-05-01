@@ -22,7 +22,7 @@ databases:
     databaseName: logistics
     user: logistics
     plan: free
-    region: oregon
+    region: Singapore
 
 
 services:
@@ -34,7 +34,7 @@ services:
     dockerfilePath: ./services/identity-service/Dockerfile
     dockerContext: ./services/identity-service
     plan: free
-    region: oregon
+    region: Singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -57,7 +57,7 @@ services:
     dockerfilePath: ./services/erp-service/Dockerfile
     dockerContext: ./services/erp-service
     plan: free
-    region: oregon
+    region: Singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -82,7 +82,7 @@ services:
     dockerfilePath: ./services/transport-service/Dockerfile
     dockerContext: ./services/transport-service
     plan: free
-    region: oregon
+    region: Singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -107,7 +107,7 @@ services:
     dockerfilePath: ./services/tracking-service/Dockerfile
     dockerContext: ./services/tracking-service
     plan: free
-    region: oregon
+    region: Singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -132,7 +132,7 @@ services:
     dockerfilePath: ./services/order-service/Dockerfile
     dockerContext: ./services/order-service
     plan: free
-    region: oregon
+    region: Singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -155,7 +155,7 @@ services:
     dockerfilePath: ./services/finance-service/Dockerfile
     dockerContext: ./services/finance-service
     plan: free
-    region: oregon
+    region: Singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -179,7 +179,7 @@ services:
     dockerfilePath: ./services/notification-service/Dockerfile
     dockerContext: ./services/notification-service
     plan: free
-    region: oregon
+    region: Singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -202,7 +202,7 @@ services:
     dockerfilePath: ./services/integration-service/Dockerfile
     dockerContext: ./services/integration-service
     plan: free
-    region: oregon
+    region: Singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -227,7 +227,7 @@ services:
     dockerfilePath: ./services/analytics-service/Dockerfile
     dockerContext: ./services/analytics-service
     plan: free
-    region: oregon
+    region: Singapore
     envVars:
       - key: DATABASE_URL
         sync: false          # ← postgresql+asyncpg://... (set in dashboard)
@@ -242,7 +242,7 @@ services:
     dockerfilePath: ./services/ai-service/Dockerfile
     dockerContext: ./services/ai-service
     plan: free
-    region: oregon
+    region: Singapore
     envVars:
       - key: DATABASE_URL
         sync: false          # ← postgresql+asyncpg://... (set in dashboard)
@@ -261,7 +261,7 @@ services:
     dockerfilePath: ./services/api-gateway/Dockerfile
     dockerContext: ./services/api-gateway
     plan: free
-    region: oregon
+    region: Singapore
     envVars:
       - key: NODE_ENV
         value: production
@@ -287,7 +287,7 @@ services:
         value: https://transportos-finance.onrender.com
       - key: NOTIFY_SERVICE_URL
         value: https://transportos-notify.onrender.com
-      - key: INTEGRATION_SERVICE_URL
+      - key: INTEGRATE_SERVICE_URL
         value: https://transportos-integration.onrender.com
       - key: ANALYTICS_SERVICE_URL
         value: https://transportos-analytics.onrender.com
@@ -310,9 +310,6 @@ services:
     dockerContext: ./frontend
     plan: free
     region: oregon
-    buildArgs:
-      VITE_API_GATEWAY: https://transportos-gateway.onrender.com
-      VITE_WS_TRACKING: https://transportos-tracking.onrender.com
     envVars:
       - key: PORT
         value: 80

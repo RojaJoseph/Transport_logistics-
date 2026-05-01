@@ -1,78 +1,40 @@
 # =============================================================================
-#  TransportOS — Render Blueprint  (render.yaml)
-#  Place this file at the ROOT of your repository.
+#  TransportOS — Render Blueprint  (DEMO / FREE TIER)
 #
-#  BEFORE DEPLOYING — set these secrets manually in the Render dashboard
-#  (they are marked  sync: false  below):
+#  ✅ No Redis   ✅ No MQTT/Mosquitto   ✅ Free-tier only
 #
-#    JWT_SECRET          — long random string (already in your .env)
-#    MONGO_URL           — MongoDB Atlas connection string  ← external service
-#    ANALYTICS_DB_URL    — same Postgres creds but with "postgresql+asyncpg://" scheme
-#    AI_DB_URL           — same as above (copied for ai-service)
-#    ANTHROPIC_API_KEY   — optional, for AI chat
-#    OPENAI_API_KEY      — optional
-#    STRIPE_SECRET_KEY   — optional, for finance
-#    STRIPE_WEBHOOK_SECRET
-#    SENDGRID_API_KEY    — optional, for email notifications
-#    SENDGRID_FROM_EMAIL
-#    TWILIO_ACCOUNT_SID  — optional, for SMS notifications
-#    TWILIO_AUTH_TOKEN
-#    TWILIO_PHONE_NUMBER
+#  ONLY secrets you must set in the Render dashboard before deploying:
+#    JWT_SECRET   — copy from your .env file
+#    MONGO_URL    — free MongoDB Atlas cluster  (https://cloud.mongodb.com)
+#    ANALYTICS_DATABASE_URL — same as Postgres but use postgresql+asyncpg://
+#    AI_DATABASE_URL        — same as above
 #
-#  MongoDB Atlas (free M0):  https://cloud.mongodb.com
-#  ─ Create a free cluster, add your Render IPs to the allowlist (or 0.0.0.0/0),
-#    then paste the connection string as the MONGO_URL secret above.
-#
-#  After setting secrets, push this file to GitHub and link the repo in
-#  Render → Blueprints → New Blueprint.
+#  HOW TO DEPLOY:
+#    1. Push this file to GitHub (root of repo)
+#    2. Render Dashboard → Blueprints → New Blueprint → connect your repo
+#    3. Set the 4 secrets above in the dashboard
+#    4. After gateway deploys, copy its URL and update VITE_API_GATEWAY below,
+#       then redeploy the frontend
 # =============================================================================
-
-# ── Managed Databases ─────────────────────────────────────────────────────────
 
 databases:
   - name: transportos-postgres
     databaseName: logistics
     user: logistics
-    plan: starter        # upgrade to standard for production workloads
-    region: singapure       # change to match your preferred region
+    plan: free
+    region: oregon
 
-
-# ── All Services ──────────────────────────────────────────────────────────────
 
 services:
 
-  # ── Managed Redis ──────────────────────────────────────────────────────────
-  - type: redis
-    name: transportos-redis
-    plan: starter
-    region: singapore
-    ipAllowList: []      # empty = internal access only (most secure)
-
-
-  # ── Mosquitto MQTT Broker (private) ────────────────────────────────────────
-  #    TCP port 1883 for backend services; WS port 9001 for browser GPS
-  - type: pserv
-    name: transportos-mosquitto
-    runtime: docker
-    dockerfilePath: ./infra/mosquitto/Dockerfile
-    dockerContext: ./infra/mosquitto
-    plan: starter
-    region: singapore
-    # No env vars needed — config is baked into the Docker image
-
-
-  # ╔══════════════════════════════════════════════════════════════════════════╗
-  # ║  BACKEND MICROSERVICES — Node.js / TypeScript                           ║
-  # ╚══════════════════════════════════════════════════════════════════════════╝
-
-  # ── Identity Service (private) ─────────────────────────────────────────────
-  - type: pserv
+  # ── Identity Service ────────────────────────────────────────────────────────
+  - type: web
     name: transportos-identity
     runtime: docker
     dockerfilePath: ./services/identity-service/Dockerfile
     dockerContext: ./services/identity-service
-    plan: starter
-    region: singapore
+    plan: free
+    region: oregon
     envVars:
       - key: NODE_ENV
         value: production
@@ -82,27 +44,20 @@ services:
         fromDatabase:
           name: transportos-postgres
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: transportos-redis
-          property: connectionString
       - key: JWT_SECRET
-        sync: false          # ← set in Render dashboard
+        sync: false
       - key: JWT_EXPIRES
         value: 8h
-      - key: LOG_LEVEL
-        value: info
 
 
-  # ── ERP Service (private) ──────────────────────────────────────────────────
-  - type: pserv
+  # ── ERP Service ─────────────────────────────────────────────────────────────
+  - type: web
     name: transportos-erp
     runtime: docker
     dockerfilePath: ./services/erp-service/Dockerfile
     dockerContext: ./services/erp-service
-    plan: starter
-    region: singapore
+    plan: free
+    region: oregon
     envVars:
       - key: NODE_ENV
         value: production
@@ -112,29 +67,22 @@ services:
         fromDatabase:
           name: transportos-postgres
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: transportos-redis
-          property: connectionString
       - key: MONGO_URL
-        sync: false          # ← MongoDB Atlas URL
+        sync: false
       - key: JWT_SECRET
         sync: false
       - key: JWT_EXPIRES
         value: 8h
-      - key: LOG_LEVEL
-        value: info
 
 
-  # ── Transport Service (private) ────────────────────────────────────────────
-  - type: pserv
+  # ── Transport Service ───────────────────────────────────────────────────────
+  - type: web
     name: transportos-transport
     runtime: docker
     dockerfilePath: ./services/transport-service/Dockerfile
     dockerContext: ./services/transport-service
-    plan: starter
-    region: singapore
+    plan: free
+    region: oregon
     envVars:
       - key: NODE_ENV
         value: production
@@ -144,28 +92,22 @@ services:
         fromDatabase:
           name: transportos-postgres
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: transportos-redis
-          property: connectionString
       - key: JWT_SECRET
         sync: false
       - key: JWT_EXPIRES
         value: 8h
-      - key: LOG_LEVEL
-        value: info
 
 
-  # ── Tracking Service (private) ─────────────────────────────────────────────
-  #    Uses MongoDB + Redis + MQTT
-  - type: pserv
+  # ── Tracking Service ────────────────────────────────────────────────────────
+  #    MQTT removed — GPS live-tracking features won't stream in demo mode,
+  #    but the service will start and REST endpoints remain functional.
+  - type: web
     name: transportos-tracking
     runtime: docker
     dockerfilePath: ./services/tracking-service/Dockerfile
     dockerContext: ./services/tracking-service
-    plan: starter
-    region: singapore
+    plan: free
+    region: oregon
     envVars:
       - key: NODE_ENV
         value: production
@@ -175,31 +117,22 @@ services:
         fromDatabase:
           name: transportos-postgres
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: transportos-redis
-          property: connectionString
       - key: MONGO_URL
-        sync: false          # ← MongoDB Atlas URL
-      - key: MQTT_URL
-        value: mqtt://transportos-mosquitto:1883
+        sync: false
       - key: JWT_SECRET
         sync: false
       - key: JWT_EXPIRES
         value: 8h
-      - key: LOG_LEVEL
-        value: info
 
 
-  # ── Order Service (private) ────────────────────────────────────────────────
-  - type: pserv
+  # ── Order Service ───────────────────────────────────────────────────────────
+  - type: web
     name: transportos-orders
     runtime: docker
     dockerfilePath: ./services/order-service/Dockerfile
     dockerContext: ./services/order-service
-    plan: starter
-    region: singapore
+    plan: free
+    region: oregon
     envVars:
       - key: NODE_ENV
         value: production
@@ -209,27 +142,20 @@ services:
         fromDatabase:
           name: transportos-postgres
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: transportos-redis
-          property: connectionString
       - key: JWT_SECRET
         sync: false
       - key: JWT_EXPIRES
         value: 8h
-      - key: LOG_LEVEL
-        value: info
 
 
-  # ── Finance Service (private) ──────────────────────────────────────────────
-  - type: pserv
+  # ── Finance Service ─────────────────────────────────────────────────────────
+  - type: web
     name: transportos-finance
     runtime: docker
     dockerfilePath: ./services/finance-service/Dockerfile
     dockerContext: ./services/finance-service
-    plan: starter
-    region: singapore
+    plan: free
+    region: oregon
     envVars:
       - key: NODE_ENV
         value: production
@@ -239,31 +165,21 @@ services:
         fromDatabase:
           name: transportos-postgres
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: transportos-redis
-          property: connectionString
       - key: JWT_SECRET
         sync: false
       - key: JWT_EXPIRES
         value: 8h
-      - key: STRIPE_SECRET_KEY
-        sync: false          # ← optional
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false          # ← optional
-      - key: LOG_LEVEL
-        value: info
 
 
-  # ── Notification Service (private) ─────────────────────────────────────────
-  - type: pserv
+  # ── Notification Service ────────────────────────────────────────────────────
+  #    Email / SMS keys omitted — service runs in console-log demo mode.
+  - type: web
     name: transportos-notify
     runtime: docker
     dockerfilePath: ./services/notification-service/Dockerfile
     dockerContext: ./services/notification-service
-    plan: starter
-    region: singapore
+    plan: free
+    region: oregon
     envVars:
       - key: NODE_ENV
         value: production
@@ -273,37 +189,20 @@ services:
         fromDatabase:
           name: transportos-postgres
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: transportos-redis
-          property: connectionString
       - key: JWT_SECRET
         sync: false
       - key: JWT_EXPIRES
         value: 8h
-      - key: SENDGRID_API_KEY
-        sync: false          # ← optional
-      - key: SENDGRID_FROM_EMAIL
-        sync: false          # ← optional
-      - key: TWILIO_ACCOUNT_SID
-        sync: false          # ← optional
-      - key: TWILIO_AUTH_TOKEN
-        sync: false          # ← optional
-      - key: TWILIO_PHONE_NUMBER
-        sync: false          # ← optional
-      - key: LOG_LEVEL
-        value: info
 
 
-  # ── Integration Service (private) ──────────────────────────────────────────
-  - type: pserv
+  # ── Integration Service ─────────────────────────────────────────────────────
+  - type: web
     name: transportos-integration
     runtime: docker
     dockerfilePath: ./services/integration-service/Dockerfile
     dockerContext: ./services/integration-service
-    plan: starter
-    region: singapore
+    plan: free
+    region: oregon
     envVars:
       - key: NODE_ENV
         value: production
@@ -313,63 +212,40 @@ services:
         fromDatabase:
           name: transportos-postgres
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: transportos-redis
-          property: connectionString
       - key: JWT_SECRET
         sync: false
       - key: JWT_EXPIRES
         value: 8h
-      - key: LOG_LEVEL
-        value: info
 
 
-  # ╔══════════════════════════════════════════════════════════════════════════╗
-  # ║  PYTHON SERVICES — FastAPI / uvicorn                                    ║
-  # ╚══════════════════════════════════════════════════════════════════════════╝
-
-  # ── Analytics Service (private) ────────────────────────────────────────────
-  #    Uses SQLAlchemy async → requires "postgresql+asyncpg://" scheme.
-  #    Render's fromDatabase gives "postgresql://" — so ANALYTICS_DB_URL must
-  #    be set manually in the dashboard with the correct scheme substituted.
-  #    Example: postgresql+asyncpg://logistics:<password>@<host>:5432/logistics
-  - type: pserv
+  # ── Analytics Service (Python / FastAPI) ────────────────────────────────────
+  #    Needs postgresql+asyncpg:// scheme — set ANALYTICS_DATABASE_URL manually.
+  #    Example: postgresql+asyncpg://logistics:<password>@<render-host>:5432/logistics
+  - type: web
     name: transportos-analytics
     runtime: docker
     dockerfilePath: ./services/analytics-service/Dockerfile
     dockerContext: ./services/analytics-service
-    plan: starter
-    region: singapore
+    plan: free
+    region: oregon
     envVars:
       - key: DATABASE_URL
-        sync: false          # ← paste postgresql+asyncpg://... in dashboard
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: transportos-redis
-          property: connectionString
+        sync: false          # ← postgresql+asyncpg://... (set in dashboard)
       - key: PORT
         value: 4010
 
 
-  # ── AI Service (private) ───────────────────────────────────────────────────
-  - type: pserv
+  # ── AI Service (Python / FastAPI) ───────────────────────────────────────────
+  - type: web
     name: transportos-ai
     runtime: docker
     dockerfilePath: ./services/ai-service/Dockerfile
     dockerContext: ./services/ai-service
-    plan: starter
-    region: singapore
+    plan: free
+    region: oregon
     envVars:
       - key: DATABASE_URL
-        sync: false          # ← paste postgresql+asyncpg://... in dashboard
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: transportos-redis
-          property: connectionString
+        sync: false          # ← postgresql+asyncpg://... (set in dashboard)
       - key: PORT
         value: 8001
       - key: ANTHROPIC_API_KEY
@@ -378,17 +254,14 @@ services:
         sync: false          # ← optional
 
 
-  # ╔══════════════════════════════════════════════════════════════════════════╗
-  # ║  API GATEWAY — Public-facing entry point                                ║
-  # ╚══════════════════════════════════════════════════════════════════════════╝
-
+  # ── API Gateway — single public entry point ─────────────────────────────────
   - type: web
     name: transportos-gateway
     runtime: docker
     dockerfilePath: ./services/api-gateway/Dockerfile
     dockerContext: ./services/api-gateway
-    plan: starter
-    region: singapore
+    plan: free
+    region: oregon
     envVars:
       - key: NODE_ENV
         value: production
@@ -398,63 +271,48 @@ services:
         fromDatabase:
           name: transportos-postgres
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: transportos-redis
-          property: connectionString
-      # Internal hostnames — Render resolves pserv names via private DNS
+      # Internal service URLs — use each service's Render public URL
+      # Render auto-assigns URLs in the format: https://<name>.onrender.com
       - key: IDENTITY_SERVICE_URL
-        value: http://transportos-identity:4005
+        value: https://transportos-identity.onrender.com
       - key: ERP_SERVICE_URL
-        value: http://transportos-erp:4001
+        value: https://transportos-erp.onrender.com
       - key: TRANSPORT_SERVICE_URL
-        value: http://transportos-transport:4002
+        value: https://transportos-transport.onrender.com
       - key: TRACKING_SERVICE_URL
-        value: http://transportos-tracking:4003
+        value: https://transportos-tracking.onrender.com
       - key: ORDER_SERVICE_URL
-        value: http://transportos-orders:4007
+        value: https://transportos-orders.onrender.com
       - key: FINANCE_SERVICE_URL
-        value: http://transportos-finance:4006
+        value: https://transportos-finance.onrender.com
       - key: NOTIFY_SERVICE_URL
-        value: http://transportos-notify:4008
+        value: https://transportos-notify.onrender.com
       - key: INTEGRATION_SERVICE_URL
-        value: http://transportos-integration:4009
+        value: https://transportos-integration.onrender.com
       - key: ANALYTICS_SERVICE_URL
-        value: http://transportos-analytics:4010
+        value: https://transportos-analytics.onrender.com
       - key: AI_SERVICE_URL
-        value: http://transportos-ai:8001
+        value: https://transportos-ai.onrender.com
       - key: JWT_SECRET
         sync: false
       - key: JWT_EXPIRES
         value: 8h
-      - key: LOG_LEVEL
-        value: info
 
 
-  # ╔══════════════════════════════════════════════════════════════════════════╗
-  # ║  FRONTEND — React / Vite  →  served by Nginx                           ║
-  # ╚══════════════════════════════════════════════════════════════════════════╝
-  #
-  #  VITE_API_GATEWAY and VITE_WS_TRACKING are baked in at BUILD TIME
-  #  (Vite embeds them into the JS bundle).
-  #  After deploying the gateway, replace the placeholder URLs below with your
-  #  actual Render gateway URL:  https://transportos-gateway.onrender.com
-  #
+  # ── Frontend — React / Vite → Nginx ─────────────────────────────────────────
+  #    IMPORTANT: After your gateway deploys and you know its URL,
+  #    update VITE_API_GATEWAY to https://transportos-gateway.onrender.com
+  #    then redeploy this service so Vite bakes in the correct URL.
   - type: web
     name: transportos-frontend
     runtime: docker
     dockerfilePath: ./frontend/Dockerfile
     dockerContext: ./frontend
-    plan: starter
-    region: singapore
-
+    plan: free
+    region: oregon
+    buildArgs:
+      VITE_API_GATEWAY: https://transportos-gateway.onrender.com
+      VITE_WS_TRACKING: https://transportos-tracking.onrender.com
     envVars:
-    - key: PORT
-      value: "80"
-
-    - key: VITE_API_GATEWAY
-      value: "https://transportos-gateway.onrender.com"
-
-    - key: VITE_WS_TRACKING
-      value: "https://transportos-tracking.onrender.com"
+      - key: PORT
+        value: 80

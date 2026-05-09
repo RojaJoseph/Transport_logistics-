@@ -90,7 +90,7 @@ services:
       - key: JWT_SECRET
         sync: false
 
-  # ── Analytics (IMPORTANT async DB) ──────────────────────────────────────────
+  # ── Analytics (needs asyncpg:// scheme) ─────────────────────────────────────
   - type: web
     name: transportos-analytics
     runtime: docker
@@ -118,7 +118,7 @@ services:
       - key: PORT
         value: 8001
 
-  # ── Gateway ─────────────────────────────────────────────────────────────────
+  # ── API Gateway ─────────────────────────────────────────────────────────────
   - type: web
     name: transportos-gateway
     runtime: docker
@@ -145,10 +145,20 @@ services:
         value: https://transportos-analytics.onrender.com
       - key: AI_SERVICE_URL
         value: https://transportos-ai.onrender.com
+      # ✅ FIX: matches the typo in api-gateway/src/index.ts (INTEGRATE not INTEGRATION)
+      - key: INTEGRATE_SERVICE_URL
+        value: https://transportos-integration.onrender.com
       - key: JWT_SECRET
         sync: false
 
-  # ── Frontend ────────────────────────────────────────────────────────────────
+  # ── Frontend ─────────────────────────────────────────────────────────────────
+  # ✅ FIX: VITE_API_GATEWAY must be set as a buildArg — Vite bakes it into
+  #         the JS bundle at build time. Without it, every login/API request
+  #         goes to undefined and the frontend shows "password incorrect".
+  #
+  #  ⚠️  IMPORTANT: After deploy, go to Render dashboard → transportos-gateway
+  #      → copy the EXACT URL (it may have a suffix like -xk92.onrender.com)
+  #      → update VITE_API_GATEWAY below → Manual Deploy the frontend.
   - type: web
     name: transportos-frontend
     runtime: docker
@@ -156,6 +166,8 @@ services:
     dockerContext: ./frontend
     plan: free
     region: singapore
+    buildArgs:
+      VITE_API_GATEWAY: https://transportos-gateway.onrender.com
     envVars:
       - key: PORT
         value: 80

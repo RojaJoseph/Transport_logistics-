@@ -125,7 +125,11 @@ async function seed() {
   console.log(`  ${G}✔${X} ${invoices.length} invoices`);
 
   // Sample users
+  const bcrypt = require('bcrypt');
+
   console.log(`${C}[users]${X}...`);
+
+  const passwordHash = await bcrypt.hash('password123' , 10);
   const users = [
     ['arjun.sharma@transportos.com', 'Arjun Sharma',   'OPS_MANAGER'  ],
     ['priya.nair@transportos.com',   'Priya Nair',     'LOGISTICS_EXEC'],
@@ -134,8 +138,8 @@ async function seed() {
   ];
   for (const [email,name,role] of users) {
     await db.query(
-      `INSERT INTO users (tenant_id,email,name,role,active) VALUES ($1,$2,$3,$4,TRUE) ON CONFLICT DO NOTHING`,
-      [TENANT,email,name,role]
+      `INSERT INTO users (tenant_id,email,name,role,active) VALUES ($1,$2,$3,$4,TRUE) ON CONFLICT(email) DO NOTHING`,
+      [TENANT,email,name,role,passwordHash]
     );
   }
   console.log(`  ${G}✔${X} ${users.length} users`);

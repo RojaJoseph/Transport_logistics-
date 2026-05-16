@@ -17,14 +17,23 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading:       boolean;
   login:           (email: string, password: string) => Promise<void>;
+  guestLogin:      () => void;
   logout:          () => void;
   refreshToken:    () => Promise<void>;
   hasPermission:   (perm: string) => boolean;
 }
 
-// In dev: hits localhost:4000 via Vite proxy
-// In prod: VITE_API_GATEWAY is the Render gateway URL
 const GATEWAY = import.meta.env.VITE_API_GATEWAY ?? 'http://localhost:4000';
+
+// Demo guest user — no API call needed
+const GUEST_USER: User = {
+  id:          'guest-0000',
+  name:        'Demo Guest',
+  email:       'guest@transportos.com',
+  role:        'SUPER_ADMIN',
+  tenant:      'ENTERPRISE',
+  permissions: [],
+};
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -33,6 +42,15 @@ export const useAuthStore = create<AuthState>()(
       token:           null,
       isAuthenticated: false,
       isLoading:       false,
+
+      // ── Instant guest access — no backend required ──────────────────
+      guestLogin: () => {
+        set({
+          user:            GUEST_USER,
+          token:           'guest-demo-token',
+          isAuthenticated: true,
+        });
+      },
 
       login: async (email: string, password: string) => {
         set({ isLoading: true });
@@ -56,7 +74,7 @@ export const useAuthStore = create<AuthState>()(
 
       refreshToken: async () => {
         const { token } = get();
-        if (!token) return;
+        if (!token || token === 'guest-demo-token') return;
         const { data } = await axios.post(
           `${GATEWAY}/auth/refresh`,
           {},
@@ -81,7 +99,7 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
-        if (state?.token) {
+        if (state?.token && state.token !== 'guest-demo-token') {
           axios.defaults.headers.common['Authorization'] = `Bearer ${state.token}`;
         }
       },
